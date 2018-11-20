@@ -1,0 +1,19 @@
+reading benchmark database ./bench.db
+Doing gcc
+Installing gcc
+ln -s /home/rmb/ACA1/simulator/bench/little/cc1.ss run.gcc
+Pre-run gcc
+cp /home/rmb/ACA1/simulator/input/ref/varasm.i .
+Run gcc
+/home/rmb/ACA1/simulator/ss3/sim-outorder -fastfwd 1000000 -max:inst 1000000 -bpred tag    run.gcc varasm.i -quiet -funroll-loops -fforce-mem -fcse-follow-jumps -fcse-skip-blocks -fexpensive-optimizations -fstrength-reduce -fpeephole -fschedule-insns -finline-functions -fschedule-insns2 -O -o varasm.s > varasm.out
+sim-outorder: SimpleScalar/PISA Tool Set version 3.0 of August, 2003.
+Copyright (c) 1994-2003 by Todd M. Austin, Ph.D. and SimpleScalar, LLC.
+All Rights Reserved. This version of SimpleScalar is licensed for academic
+non-commercial use.  No portion of this work may be used by any commercial
+entity, or for any commercial purpose, without the prior written permission
+of SimpleScalar, LLC (info@simplescalar.com).
+
+fatal: cannot parse predictor type `tag'
+****** program returns ERROR 256
+Post-run gcc
+rm -f -r varasm.*
