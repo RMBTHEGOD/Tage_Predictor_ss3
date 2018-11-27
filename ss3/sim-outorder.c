@@ -121,7 +121,7 @@ static int bimod_config[1] =
 /* 2-level predictor config (<l1size> <l2size> <hist_size> <xor>) */
 static int twolev_nelt = 4;
 static int twolev_config[4] =
-  { /* l1size */1, /* l2size */1024, /* hist */8, /* xor */FALSE};
+  { /*T1size */256, /* T2size */256, /*T3size */512, /*T4Size */512};
 
 /* Tage predictor config (<l1size> <l2size> <hist_size> <xor>) */
 static int tage_nelt = 4;
@@ -677,11 +677,11 @@ sim_reg_options(struct opt_odb_t *odb)
 		   comb_config, comb_nelt, &comb_nelt,
 		   /* default */comb_config,
 		   /* print */TRUE, /* format */NULL, /* !accrue */FALSE);
- //opt_reg_int_list(odb, "-bpred:tage",
+ opt_reg_int_list(odb, "-bpred:tage",
 		   "combining predictor config (<meta_table_size>)",
-//		   tage_config, tage_nelt, &tage_nelt,
-//		   /* default */tage_config,
-//		   /* print */TRUE, /* format */NULL, /* !accrue */FALSE);
+		   tage_config, tage_nelt, &tage_nelt,
+		   /* default */tage_config,
+		   /* print */TRUE, /* format */NULL, /* !accrue */FALSE);
 opt_reg_int(odb, "-bpred:ras",
               "return address stack size (0 for no return stack)",
               &ras_size, /* default */ras_size,
@@ -962,17 +962,17 @@ sim_check_options(struct opt_odb_t *odb,        /* options database */
     {
       /* 2-level adaptive predictor, bpred_create() checks args */
       if (tage_nelt != 4)
-	fatal("bad 2-level pred config (<l1size> <l2size> <hist_size> <xor>)");
+	fatal("bad 2-level pred config (<T1size> <T2size> <T3size> <T4size>)");
       if (btb_nelt != 2)
 	fatal("bad btb config (<num_sets> <associativity>)");
 
       pred = bpred_create(BPredTage,
-			  /* bimod table size */0,
-			  /* 2lev l1 size */tage_config[0],
-			  /* 2lev l2 size */tage_config[1],
+			  /* bimod table size */bimod_config[0],
+			  /* T1 size */tage_config[0],
+			  /* T2 size */tage_config[1],
 			  /* meta table size */0,
-			  /* history reg size */tage_config[2],
-			  /* history xor address */tage_config[3],
+			  /* T3 size*/tage_config[2],
+			  /* T4 size */tage_config[3],
 			  /* btb sets */btb_config[0],
 			  /* btb assoc */btb_config[1],
 			  /* ret-addr stack size */ras_size);

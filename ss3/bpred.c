@@ -99,6 +99,10 @@ bpred_create(enum bpred_class class,	/* type of predictor to create */
     break;
  
   case BPredTage:
+    	pred->dirpred.bimod=bpred_dir_create(BPred2bit, bimod_size, 0, 0, 0);
+	pred->dirpred.tage = 
+	bpred_dir_create(class, /*T1 Size*/l1size, /*T2 Size*/l2size, /*T3 Size*/shift_width,/*T4 Size*/xor);
+
   case BPred2Level:
     pred->dirpred.twolev = 
       bpred_dir_create(class, l1size, l2size, shift_width, xor);
@@ -106,7 +110,7 @@ bpred_create(enum bpred_class class,	/* type of predictor to create */
     break;
 
   case BPred2bit:
-    pred->dirpred.bimod = 
+    pred->dirpred.bimod =  
       bpred_dir_create(class, bimod_size, 0, 0, 0);
 
   case BPredTaken:
@@ -198,6 +202,78 @@ bpred_dir_create (
   cnt = -1;
   switch (class) {
   case BPredTage:
+      	if (!l1size || (l1size & (l1size-1)) != 0)
+		fatal("T-1 size, `%d', must be non-zero and a power of two", 
+	      l1size);
+      	pred_dir->config.tage.t1size = l1size;
+      
+      	if (!l2size || (l2size & (l2size-1)) != 0)
+		fatal("T-2 size, `%d', must be non-zero and a power of two", 
+	      l2size);
+      	pred_dir->config.tage.t2size = l2size;
+      
+      	if (!shift_width || (shift_width & (shift_width-1)) != 0)
+		fatal("T-3 size, `%d', must be non-zero and a power of two", 
+	      shift_width);
+      	pred_dir->config.tage.t3size = shift_width;
+	if (!xor || (xor & (xor-1)) != 0)
+		fatal("T-4 size, `%d', must be non-zero and a power of two", 
+	      xor);
+      	pred_dir->config.tage.t4size = xor;
+	pred_dir->config.tage.clock=0;
+	pred_dir->config.tage.clock_flip=1;
+	pred_dir->config.tage.primePred=-1;
+	pred_dir->config.tage.altPred=-1;
+	pred_dir->config.tage.primeTagComp=4;
+	pred_dir->config.tage.altTagComp=4;
+	if(!(pred_dir->config.tage.geometric_lengths=calloc((int)log2(4),sizeof(int))))
+	{
+		fatal("cannot allocate geometric_lengths ");
+	}
+	pred_dir->config.tage.geometric_lengths[0]=130;
+	pred_dir->config.tage.geometric_lengths[1]=44;
+	pred_dir->config.tage.geometric_lengths[2]=15;
+	pred_dir->config.tage.geometric_lengths[3]=5;
+	if(!(pred_dir->config.tage.tag_size=calloc((int)log2(4),sizeof(int))))
+	{
+		fatal("cannot allocate geometric_lengths ");
+	}
+	pred_dir->config.tage.tag_size[0]=9;
+	pred_dir->config.tage.tag_size[1]=9;
+	pred_dir->config.tage.tag_size[2]=8;
+	pred_dir->config.tage.tag_size[3]=8;
+	for(int i=0;i<4;i++)
+	{
+		if(!(pred_dir->config.tage.tag_comp_entry[i]=calloc((int)log2(l1size),sizeof(struct tag_comp_entry))))
+		{
+			fatal("cannot allocate tage_comp_table ");
+		}
+	}
+	if(!(pred_dir->config.tage.folded_history_index=calloc((int)log2(4),sizeof(struct folded_history))))
+	{
+		fatal("cannot allocate folded_history_index ");
+	}
+	for(int i=0;i<2;i++)
+		if(!(pred_dir->config.tage.folded_history_tag[i]=calloc((int)log2(l1size),sizeof(struct folded_history))))
+		{
+			fatal("cannot allocate folded_history_tag for table ");
+		}
+	for(int i=0;i<4;i++)
+	{
+		pred_dir->config.tage.folded_history_index->folded_length=4;
+		pred_dir->config.tage.folded_history_index->geometric_length=pred_dir->config.tage.geometric_lengths[i];
+		pred_dir->config.tage.folded_history_tag[0]->folded_length=pred_dir->config.tage.tag_size[i];
+		pred_dir->config.tage.folded_history_tag[0]->geometric_length=pred_dir->config.tage.geometric_lengths[i];
+		pred_dir->config.tage.folded_history_tag[1]->folded_length=pred_dir->config.tage.tag_size[i];
+		pred_dir->config.tage.folded_history_tag[1]->geometric_length=pred_dir->config.tage.geometric_lengths[i];
+
+
+	}
+	pred_dir->config.tage.use_alt_on_na=0;
+	pred_dir->config.tage.geometric_history=0;
+	pred_dir->config.tage.path_history=0;
+	break;
+	
   case BPred2Level:
     {
       if (!l1size || (l1size & (l1size-1)) != 0)

@@ -108,6 +108,22 @@ enum bpred_class {
   BPred_NUM
   };
 
+struct tag_comp_entry
+{
+	int ctr;
+	int tag;
+	int useful_entry;
+};
+
+struct folded_history
+{
+	int folded_history;
+	int folded_length;
+	int geometric_length;
+	int tag_comp_index;
+	int tag_comp_tag;
+};
+
 /* an entry in a BTB */
 struct bpred_btb_ent_t {
   md_addr_t addr;		/* address of branch being tracked */
@@ -132,6 +148,27 @@ struct bpred_dir_t {
       int *shiftregs;		/* level-1 history table */
       unsigned char *l2table;	/* level-2 prediction state table */
     } two;
+    struct {
+	int bimodal_size;
+	int t1size;
+	int t2size;
+	int t3size;
+	int t4size;
+	int clock;
+	unsigned char clock_flip;
+	unsigned char primePred;
+	unsigned char altPred;
+	int primeTagComp;
+	int altTagComp;	
+	struct tag_comp_entry *tag_comp_entry[4];
+	struct folded_history *folded_history_index;
+	struct folded_history *folded_history_tag[2];
+	int use_alt_on_na;
+	int path_history;
+	int geometric_history;
+	int *geometric_lengths;
+	int *tag_size;
+    }tage;
   } config;
 };
 
@@ -142,6 +179,7 @@ struct bpred_t {
     struct bpred_dir_t *bimod;	  /* first direction predictor */
     struct bpred_dir_t *twolev;	  /* second direction predictor */
     struct bpred_dir_t *meta;	  /* meta predictor */
+    struct bpred_dir_t *tage;    /*Tage predictor */
   } dirpred;
 
   struct {
