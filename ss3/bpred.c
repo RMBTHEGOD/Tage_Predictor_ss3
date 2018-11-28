@@ -579,6 +579,75 @@ bpred_dir_lookup(struct bpred_dir_t *pred_dir,	/* branch dir predictor inst */
   /* Except for jumps, get a pointer to direction-prediction bits */
   switch (pred_dir->class) {
     case BPredTage:
+	{	    
+		int tag_comp_tag[4];
+		pred_dir->config.tage.folded_history_index[3].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)-3))^(pred_dir->config.tage.folded_history_index[3].folded_history)^(pred_dir->config.tage.path_history&7);
+		pred_dir->config.tage.folded_history_index[2].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)-2))^(pred_dir->config.tage.folded_history_index[2].folded_history)^(pred_dir->config.tage.path_history&31);
+		pred_dir->config.tage.folded_history_index[1].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)-1))^(pred_dir->config.tage.folded_history_index[1].folded_history)^(pred_dir->config.tage.path_history);
+		pred_dir->config.tage.folded_history_index[0].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)))^(pred_dir->config.tage.folded_history_index[0].folded_history)^(pred_dir->config.tage.path_history)^(pred_dir->config.tage.path_history >> ((int)log2(pred_dir->config.tage.t1size)));
+		for(int i=0;i<4;i++)
+		{
+			pred_dir->config.tage.folded_history_index[i].tag_comp_index &=((int)log2(pred_dir->config.tage.t1size)-1);
+		}
+		for(int i=0;i<4;i++)
+		{
+			tag_comp_tag[i]=baddr^(pred_dir->config.tage.folded_history_tag[0][i].folded_history)^(pred_dir->config.tage.folded_history_tag[1][i].folded_history<<1);
+			tag_comp_tag[i] &=((1<<pred_dir->config.tage.tag_size[i])-1);	
+		}
+		//Base Prediction 
+		p = &pred_dir->config.bimod.table[BIMOD_HASH(pred_dir, baddr)];
+		*p = *p>>1;
+	        
+		//Searching for matching tag starting from Tag Component 0
+		for(int i=1;i<4;i++)
+		{
+			if(pred_dir->config.tage.tag_comp_entry[i][pred_dir->config.tage.folded_history_index[i].tag_comp_index].tag==tag_comp_tag[i])
+			{
+				pred_dir->config.tage.primeTagComp=i;
+				break;
+			}
+		}
+		for(int i=(pred_dir->config.tage.primeTagComp+1);i<4;i++)
+		{
+			if(pred_dir->config.tage.tag_comp_entry[i][pred_dir->config.tage.folded_history_index[i].tag_comp_index].tag==tag_comp_tag[i])
+			{
+				pred_dir->config.tage.altTagComp=i;
+				break;
+			}
+		}
+		if(pred_dir->config.tage.primeTagComp<4)
+		{
+			struct tag_comp_entry *temp_tag_comp_entry;
+			temp_tag_comp_entry=&(pred_dir->config.tage.tag_comp_entry[pred_dir->config.tage.primeTagComp][pred_dir->config.tage.folded_history_index[pred_dir->config.tage.primeTagComp].tag_comp_index]);
+			if(pred_dir->config.tage.altTagComp==4)
+			{
+				pred_dir->config.tage.altPred=*p;
+			}
+			else
+			{	
+				int alt_tag_table_index = pred_dir->config.tage.altTagComp;
+				int tag_index=pred_dir->config.tage.folded_history_index[alt_tag_table_index].tag_comp_index;
+				pred_dir->config.tage.altPred=pred_dir->config.tage.tag_comp_entry[alt_tag_table_index][tag_index].ctr>>((int)ceil(log2(7)));
+			}
+			if(temp_tag_comp_entry->useful_entry!=0||(pred_dir->config.tage.use_alt_on_na<8))
+			{
+				pred_dir->config.tage.primePred=(temp_tag_comp_entry->ctr>>((int)ceil(log2(7))));
+				*p=pred_dir->config.tage.primePred;
+				break;
+			}
+			else
+			{
+				*p=pred_dir->config.tage.altPred;
+				break;
+			}	
+		}
+		else
+		{
+			pred_dir->config.tage.altPred=*p;
+		}
+
+		break;
+	}
     case BPred2Level:
       {
 	int l1index, l2index;
@@ -686,6 +755,12 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
 	}
       break;
     case BPredTage:
+	if ((MD_OP_FLAGS(op) & (F_CTRL|F_UNCOND)) != (F_CTRL|F_UNCOND))
+	{
+	  dir_update_ptr->pdir1 =
+	   bpred_dir_lookup (pred->dirpred.tage, baddr);
+	}
+  	break;	
     case BPred2Level:
       if ((MD_OP_FLAGS(op) & (F_CTRL|F_UNCOND)) != (F_CTRL|F_UNCOND))
 	{
@@ -794,6 +869,10 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
   else
     {
       /* BTB hit, so return target if it's a predicted-taken branch */
+	if(pred->class==BPredTage)
+	{
+		return((*(dir_update_ptr->pdir1)==1)?pbtb->target:0);
+	}
       return ((*(dir_update_ptr->pdir1) >= 2)
 	      ? /* taken */ pbtb->target
 	      : /* not taken */ 0);
