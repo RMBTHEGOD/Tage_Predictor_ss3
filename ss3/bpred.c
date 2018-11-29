@@ -1254,7 +1254,7 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 			{
 				for(int j=0;j<pred->dirpred.tage->config.tage.t1size;j++)
 				{
-					pred->dirpred.tage->config.tage.tag_comp_entry[j][pred->dirpred.tage->config.tage.folded_history_index[i].tag_comp_index].useful_entry&=1;
+					pred->dirpred.tage->config.tage.tag_comp_entry[i][j].useful_entry&=1;
 				}
 			}
 		}
@@ -1264,7 +1264,7 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 			{
 				for(int j=0;j<pred->dirpred.tage->config.tage.t1size;j++)
 				{
-					pred->dirpred.tage->config.tage.tag_comp_entry[j][pred->dirpred.tage->config.tage.folded_history_index[i].tag_comp_index].useful_entry&=2;
+					pred->dirpred.tage->config.tage.tag_comp_entry[i][j].useful_entry&=2;
 				}
 			}
 		}
