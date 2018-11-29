@@ -643,6 +643,7 @@ bpred_dir_lookup(struct bpred_dir_t *pred_dir,	/* branch dir predictor inst */
 			}
 			else
 			{	
+				pred_dir->config.tage.isBimodal=0;
 				p=&(pred_dir->config.tage.tag_comp_entry[alt_tag_table_index][tag_index].ctr);
 				pred_dir->config.tage.altPred=pred_dir->config.tage.tag_comp_entry[alt_tag_table_index][tag_index].ctr>>((int)ceil(log2(7)));
 			}
