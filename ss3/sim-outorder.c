@@ -121,12 +121,12 @@ static int bimod_config[1] =
 /* 2-level predictor config (<l1size> <l2size> <hist_size> <xor>) */
 static int twolev_nelt = 4;
 static int twolev_config[4] =
-  { /*T1size */256, /* T2size */256, /*T3size */512, /*T4Size */512};
+  { /* l1size */1, /* l2size */1024, /* hist */8, /* xor */FALSE};
 
 /* Tage predictor config (<l1size> <l2size> <hist_size> <xor>) */
 static int tage_nelt = 4;
 static int tage_config[4] =
-  { /* l1size */1, /* l2size */1024, /* hist */8, /* xor */FALSE};
+  { /*T1size */1024, /* T2size */1024, /*T3size */1024, /*T4Size */1024};
 
 /* combining predictor config (<meta_table_size> */
 static int comb_nelt = 1;
@@ -655,7 +655,7 @@ sim_reg_options(struct opt_odb_t *odb)
                );
 
   opt_reg_string(odb, "-bpred",
-		 "branch predictor type {nottaken|taken|perfect|bimod|2lev|comb}",
+		 "branch predictor type {nottaken|taken|perfect|bimod|2lev|comb|tage}",
                  &pred_type, /* default */"bimod",
                  /* print */TRUE, /* format */NULL);
 
@@ -964,8 +964,7 @@ sim_check_options(struct opt_odb_t *odb,        /* options database */
       if (tage_nelt != 4)
 	fatal("bad 2-level pred config (<T1size> <T2size> <T3size> <T4size>)");
       if (btb_nelt != 2)
-	fatal("bad btb config (<num_sets> <associativity>)");
-
+	fatal("bad btb config (<num_sets> <associativity>)"); 
       pred = bpred_create(BPredTage,
 			  /* bimod table size */bimod_config[0],
 			  /* T1 size */tage_config[0],

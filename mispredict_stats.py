@@ -2,7 +2,7 @@ import os
 import re
 import subprocess
 bench_mark_names = ['gcc','li','perl','ijpeg']
-branch_pred = ['2lev','bimod','taken','nottaken','comb']
+branch_pred = ['tage','2lev','bimod','taken','nottaken','comb']
 open("stats/mispredict_stats.txt","w").close()
 for bench_mark_name in bench_mark_names:
     with open("stats/mispredict_stats.txt","a+") as stats:

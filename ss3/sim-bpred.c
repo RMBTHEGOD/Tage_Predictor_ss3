@@ -92,6 +92,12 @@ static int twolev_nelt = 4;
 static int twolev_config[4] =
   { /* l1size */1, /* l2size */1024, /* hist */8, /* xor */FALSE};
 
+/* Tage predictor config (<l1size> <l2size> <hist_size> <xor>) */
+static int tage_nelt = 4;
+static int tage_config[4] =
+  { /*T1size */1024, /* T2size */1024, /*T3size */1024, /*T4Size */1024};
+
+
 /* combining predictor config (<meta_table_size> */
 static int comb_nelt = 1;
 static int comb_config[1] =
@@ -163,6 +169,12 @@ sim_reg_options(struct opt_odb_t *odb)
 		   /* default */twolev_config,
                    /* print */TRUE, /* format */NULL, /* !accrue */FALSE);
 
+ opt_reg_int_list(odb, "-bpred:tage",
+		   "combining predictor config (<meta_table_size>)",
+		   tage_config, tage_nelt, &tage_nelt,
+		   /* default */tage_config,
+		   /* print */TRUE, /* format */NULL, /* !accrue */FALSE);
+
   opt_reg_int_list(odb, "-bpred:comb",
 		   "combining predictor config (<meta_table_size>)",
 		   comb_config, comb_nelt, &comb_nelt,
@@ -229,6 +241,24 @@ sim_check_options(struct opt_odb_t *odb, int argc, char **argv)
 			  /* meta table size */0,
 			  /* history reg size */twolev_config[2],
 			  /* history xor address */twolev_config[3],
+			  /* btb sets */btb_config[0],
+			  /* btb assoc */btb_config[1],
+			  /* ret-addr stack size */ras_size);
+    }
+    else if (!mystricmp(pred_type, "tage"))
+    {
+      /* 2-level adaptive predictor, bpred_create() checks args */
+      if (tage_nelt != 4)
+	fatal("bad 2-level pred config (<T1size> <T2size> <T3size> <T4size>)");
+      if (btb_nelt != 2)
+	fatal("bad btb config (<num_sets> <associativity>)"); 
+      pred = bpred_create(BPredTage,
+			  /* bimod table size */bimod_config[0],
+			  /* T1 size */tage_config[0],
+			  /* T2 size */tage_config[1],
+			  /* meta table size */0,
+			  /* T3 size*/tage_config[2],
+			  /* T4 size */tage_config[3],
 			  /* btb sets */btb_config[0],
 			  /* btb assoc */btb_config[1],
 			  /* ret-addr stack size */ras_size);
