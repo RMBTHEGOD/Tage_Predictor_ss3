@@ -255,7 +255,7 @@ bpred_dir_create (
 		fatal("cannot allocate folded_history_index ");
 	}
 	for(int i=0;i<2;i++)
-		if(!(pred_dir->config.tage.folded_history_tag[i]=calloc((int)log2(l1size),sizeof(struct folded_history))))
+		if(!(pred_dir->config.tage.folded_history_tag[i]=calloc(4,sizeof(struct folded_history))))
 		{
 			fatal("cannot allocate folded_history_tag for table ");
 		}
@@ -270,12 +270,16 @@ bpred_dir_create (
 
 
 	}
-	pred_dir->config.tage.use_alt_on_na=0;
-	if(!(pred_dir->config.tage.geometric_history=calloc(pred_dir->config.tage.geometric_lengths[0]+1,sizeof(int))))
+	pred_dir->config.tage.use_alt_on_na=8;
+	if(!(pred_dir->config.tage.geometric_history=calloc(pred_dir->config.tage.geometric_lengths[0]+1,sizeof(unsigned int))))
 	{
 		fatal("cannot allocate geometric_lengths ");
 	}
 	pred_dir->config.tage.path_history=0;
+	if(!(pred_dir->config.tage.tag_comp_tag=calloc(4,sizeof(int))))
+	{
+		fatal("cannot allocate tag_comp_tag ");
+	}
 	break;
 	
   case BPred2Level:
@@ -598,7 +602,7 @@ bpred_dir_lookup(struct bpred_dir_t *pred_dir,	/* branch dir predictor inst */
 		pred_dir->config.tage.folded_history_index[3].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)-3))^(pred_dir->config.tage.folded_history_index[3].folded_history)^(pred_dir->config.tage.path_history&7);
 		pred_dir->config.tage.folded_history_index[2].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)-2))^(pred_dir->config.tage.folded_history_index[2].folded_history)^(pred_dir->config.tage.path_history&31);
 		pred_dir->config.tage.folded_history_index[1].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)-1))^(pred_dir->config.tage.folded_history_index[1].folded_history)^(pred_dir->config.tage.path_history);
-		pred_dir->config.tage.folded_history_index[0].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)))^(pred_dir->config.tage.folded_history_index[0].folded_history)^(pred_dir->config.tage.path_history)^(pred_dir->config.tage.path_history >> ((int)log2(pred_dir->config.tage.t1size)));
+		pred_dir->config.tage.folded_history_index[0].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)))^(pred_dir->config.tage.folded_history_index[0].folded_history)^(pred_dir->config.tage.path_history);//^(pred_dir->config.tage.path_history >> ((int)log2(pred_dir->config.tage.t1size)));
 		for(int i=0;i<4;i++)
 		{
 			pred_dir->config.tage.folded_history_index[i].tag_comp_index &=((1<<(int)log2(pred_dir->config.tage.t1size))-1);
@@ -608,8 +612,9 @@ bpred_dir_lookup(struct bpred_dir_t *pred_dir,	/* branch dir predictor inst */
 			tag_comp_tag[i]=baddr^(pred_dir->config.tage.folded_history_tag[0][i].folded_history)^(pred_dir->config.tage.folded_history_tag[1][i].folded_history<<1);
 			tag_comp_tag[i] &=((1<<pred_dir->config.tage.tag_size[i])-1);	
 		}
+		pred_dir->config.tage.tag_comp_tag=tag_comp_tag;
 		//Base Prediction 
-				int base_pred_index =baddr%2048;
+		int base_pred_index =((((baddr) >> 19) ^ ((baddr) >> MD_BR_SHIFT)) & (2048-1));
 		p=&(pred_dir->config.tage.bimod[base_pred_index].ctr);
 		pred_dir->config.tage.isBimodal=1;
 	        //Searching for matching tag starting from Tag Component 0
@@ -639,24 +644,24 @@ bpred_dir_lookup(struct bpred_dir_t *pred_dir,	/* branch dir predictor inst */
 
 			if(pred_dir->config.tage.altTagComp==4)
 			{
-				pred_dir->config.tage.altPred=*p;
+				pred_dir->config.tage.altPred=(*p>>1)&1;
 			}
 			else
 			{	
 				pred_dir->config.tage.isBimodal=0;
 				p=&(pred_dir->config.tage.tag_comp_entry[alt_tag_table_index][tag_index].ctr);
-				pred_dir->config.tage.altPred=pred_dir->config.tage.tag_comp_entry[alt_tag_table_index][tag_index].ctr>>((int)ceil(log2(7)));
+				pred_dir->config.tage.altPred=(pred_dir->config.tage.tag_comp_entry[alt_tag_table_index][tag_index].ctr>>((int)ceil(log2(7))-1))&1;
 			}
 			if((*temp_tag_comp_entry).useful_entry!=0||(pred_dir->config.tage.use_alt_on_na<8))
 			{
-				pred_dir->config.tage.primePred=((*temp_tag_comp_entry).ctr>>((int)ceil(log2(7))));
+				pred_dir->config.tage.primePred=(((*temp_tag_comp_entry).ctr>>((int)ceil(log2(7))-1)))&1;
 				p=&((*temp_tag_comp_entry).ctr);
 				pred_dir->config.tage.isBimodal=0;	
 			}	
 		}
 		else
 		{       pred_dir->config.tage.isBimodal=1;
-			pred_dir->config.tage.altPred=*p;
+			pred_dir->config.tage.altPred=(*p>>1)&1;
 		}
 
 	break;
@@ -874,7 +879,14 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
   /* otherwise we have a conditional branch */
   if (pbtb == NULL)
     {
-      /* BTB miss -- just return a predicted direction */
+     if(pred->class==BPredTage)
+	{	if(!(!!pred->dirpred.tage->config.tage.isBimodal))
+		{
+			return((*(dir_update_ptr->pdir1)>=4)?1:0);
+		}
+	} 
+	    
+	 /* BTB miss -- just return a predicted direction */
       return ((*(dir_update_ptr->pdir1) >= 2)
 	      ? /* taken */ 1
 	      : /* not taken */ 0);
@@ -883,7 +895,7 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
     {
       /* BTB hit, so return target if it's a predicted-taken branch */
 	if(pred->class==BPredTage)
-	{	if(pred->dirpred.tage->config.tage.isBimodal==0)
+	{	if(!(!!pred->dirpred.tage->config.tage.isBimodal))
 		{
 			return((*(dir_update_ptr->pdir1)>=4)?pbtb->target:0);
 		}
@@ -1005,19 +1017,9 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
   /* update L1 table if appropriate */
   /* L1 table is updated unconditionally for combining predictor too */
   if ((MD_OP_FLAGS(op) & (F_CTRL|F_UNCOND)) != (F_CTRL|F_UNCOND) &&
-      (pred->class == BPred2Level|| pred->class == BPredComb || pred->class == BPredTage))
+      (pred->class == BPred2Level|| pred->class == BPredComb))
     {
-	if(pred->class == BPredTage)
-	{
-		for(int i=pred->dirpred.tage->config.tage.geometric_lengths[0];i>1;i--)
-	{
-		pred->dirpred.tage->config.tage.geometric_history[i] =pred->dirpred.tage->config.tage.geometric_history[i-1];
-	}
-		pred->dirpred.tage->config.tage.geometric_history[0]=taken;
-		
-	}
-	else
-	{
+	
 	      int l1index, shift_reg;
 	      
 	      /* also update appropriate L1 history register */
@@ -1027,8 +1029,20 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 		(pred->dirpred.twolev->config.two.shiftregs[l1index] << 1) | (!!taken);
 	      pred->dirpred.twolev->config.two.shiftregs[l1index] =
 		shift_reg & ((1 << pred->dirpred.twolev->config.two.shift_width) - 1);
+    }
+    if(((MD_OP_FLAGS(op) & (F_CTRL|F_UNCOND)) == (F_CTRL|F_UNCOND)) && (pred->class==BPredTage))
+    {
+	if(pred->class == BPredTage)
+	{
+		for(int i=pred->dirpred.tage->config.tage.geometric_lengths[0];i>=1;i--)
+	{
+		pred->dirpred.tage->config.tage.geometric_history[i] =pred->dirpred.tage->config.tage.geometric_history[i-1];
+	}
+		pred->dirpred.tage->config.tage.geometric_history[0]=1;
+		
 	}
     }
+
 
   /* find BTB entry if it's a taken branch (don't allocate for non-taken) */
   if (taken)
@@ -1108,7 +1122,7 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
       {
 	if(pred->dirpred.tage->config.tage.primeTagComp < 4)
 	{
-		if(pred_taken!=pred->dirpred.tage->config.tage.altPred)
+		if((!!pred_taken)!=(!!pred->dirpred.tage->config.tage.altPred))
 		{
 			if((!!pred_taken)==(!!taken))
 			{
@@ -1133,9 +1147,9 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 		}
 		if((pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].useful_entry==0)&&((pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].ctr==3)||(pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].ctr==4)))
 			      {
-				if(pred->dirpred.tage->config.tage.primePred !=pred->dirpred.tage->config.tage.altPred)
+				if((!!pred->dirpred.tage->config.tage.primePred) !=(!!pred->dirpred.tage->config.tage.altPred))
 				{
-					if((!!(pred->dirpred.tage->config.tage.altPred) ==(!!taken)))
+					if((!!(pred->dirpred.tage->config.tage.altPred)) ==(!!taken))
 					{
 						if(pred->dirpred.tage->config.tage.use_alt_on_na < 15)
 						{
@@ -1163,7 +1177,7 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 			    --*dir_update_ptr->pdir1;
 			}
 	 }
-	 if((!!pred_taken)!=(!!taken)&&(pred->dirpred.tage->config.tage.primeTagComp>0 ))
+	 if(((!!pred_taken)!=(!!taken))&&(pred->dirpred.tage->config.tage.primeTagComp>0 ))
 	 {
 		unsigned char isPredEntryCountZero=0;
 		for(int i=(pred->dirpred.tage->config.tage.primeTagComp-1);i>=0;i--)
@@ -1178,7 +1192,8 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 		{
 			for(int i=(pred->dirpred.tage->config.tage.primeTagComp-1);i>=0;i--)
 			{
-				pred->dirpred.tage->config.tage.tag_comp_entry[i][pred->dirpred.tage->config.tage.folded_history_index[i].tag_comp_index].useful_entry--;
+				if(pred->dirpred.tage->config.tage.tag_comp_entry[i][pred->dirpred.tage->config.tage.folded_history_index[i].tag_comp_index].useful_entry>0)	
+					pred->dirpred.tage->config.tage.tag_comp_entry[i][pred->dirpred.tage->config.tage.folded_history_index[i].tag_comp_index].useful_entry--;
 			}
 		}
 		else
@@ -1187,22 +1202,24 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 			int randomNumber = rand()%100;
 			int numberOfZeroUsefulEntry=0;
 			int choosen_tag_table=0;
-			for(int i=0;i<pred->dirpred.tage->config.tage.primeTagComp;i++)
+			int table_1;
+			for(int i=(pred->dirpred.tage->config.tage.primeTagComp-1);i>=0;i--)
 			{
 				if(pred->dirpred.tage->config.tage.tag_comp_entry[i][pred->dirpred.tage->config.tage.folded_history_index[i].tag_comp_index].useful_entry == 0)
 
 				{
 					numberOfZeroUsefulEntry++;
-				}
-				if(numberOfZeroUsefulEntry == 1)
-				{
-					choosen_tag_table = i;
-				}
-				else if(numberOfZeroUsefulEntry >1)
-				{
-					if(randomNumber>33 && randomNumber<=99)
+					if(numberOfZeroUsefulEntry == 1)
 					{
-						choosen_tag_table = i;
+						choosen_tag_table=i;
+					}
+					else if(numberOfZeroUsefulEntry >1)
+					{
+						if(randomNumber<=33)
+						{
+							choosen_tag_table = i;
+						}
+						break;
 					}
 				}
 			}
@@ -1214,7 +1231,7 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 			{
 				pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index].ctr=3;
 			}
-			pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index].tag=pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index;
+			pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index].tag=pred->dirpred.tage->config.tage.tag_comp_tag[choosen_tag_table];
 			pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index].useful_entry=0;
 		}
 	 }
@@ -1235,9 +1252,9 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 			
 			for(int i=0;i<4;i++)
 			{
-				for(int j=0;j<((int)ceil(log2(pred->dirpred.tage->config.tage.t1size)));j++)
+				for(int j=0;j<pred->dirpred.tage->config.tage.t1size;j++)
 				{
-					pred->dirpred.tage->config.tage.tag_comp_entry[i][pred->dirpred.tage->config.tage.folded_history_index[j].tag_comp_index].useful_entry&=1;
+					pred->dirpred.tage->config.tage.tag_comp_entry[j][pred->dirpred.tage->config.tage.folded_history_index[i].tag_comp_index].useful_entry&=1;
 				}
 			}
 		}
@@ -1247,12 +1264,12 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 			{
 				for(int j=0;j<pred->dirpred.tage->config.tage.t1size;j++)
 				{
-					pred->dirpred.tage->config.tage.tag_comp_entry[i][pred->dirpred.tage->config.tage.folded_history_index[j].tag_comp_index].useful_entry&=2;
+					pred->dirpred.tage->config.tage.tag_comp_entry[j][pred->dirpred.tage->config.tage.folded_history_index[i].tag_comp_index].useful_entry&=2;
 				}
 			}
 		}
 	}
-	for(int i=pred->dirpred.tage->config.tage.geometric_lengths[0];i>1;i--)
+	for(int i=pred->dirpred.tage->config.tage.geometric_lengths[0];i>=1;i--)
 	{
 		pred->dirpred.tage->config.tage.geometric_history[i] =pred->dirpred.tage->config.tage.geometric_history[i-1];
 	}

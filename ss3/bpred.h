@@ -173,6 +173,7 @@ struct bpred_dir_t {
 	int *geometric_history;
 	int *geometric_lengths;
 	int *tag_size;
+	int *tag_comp_tag;
 	unsigned char isBimodal;
 	struct bimod_predictor *bimod;
     }tage;
