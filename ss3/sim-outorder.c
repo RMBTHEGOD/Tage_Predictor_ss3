@@ -116,7 +116,7 @@ static char *pred_type;
 /* bimodal predictor config (<table_size>) */
 static int bimod_nelt = 1;
 static int bimod_config[1] =
-  { /* bimod tbl size */2048 };
+  { /* bimod tbl size */4096 };
 
 /* 2-level predictor config (<l1size> <l2size> <hist_size> <xor>) */
 static int twolev_nelt = 4;
@@ -126,7 +126,7 @@ static int twolev_config[4] =
 /* Tage predictor config (<l1size> <l2size> <hist_size> <xor>) */
 static int tage_nelt = 4;
 static int tage_config[4] =
-  { /*T1size */1024, /* T2size */1024, /*T3size */1024, /*T4Size */1024};
+  { /*T1size */128, /* T2size */128, /*T3size */128, /*T4Size */128};
 
 /* combining predictor config (<meta_table_size> */
 static int comb_nelt = 1;

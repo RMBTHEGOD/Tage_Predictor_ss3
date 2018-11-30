@@ -231,16 +231,16 @@ bpred_dir_create (
 	{
 		fatal("cannot allocate geometric_lengths ");
 	}
-	pred_dir->config.tage.geometric_lengths[0]=130;
-	pred_dir->config.tage.geometric_lengths[1]=44;
-	pred_dir->config.tage.geometric_lengths[2]=15;
-	pred_dir->config.tage.geometric_lengths[3]=5;
+	pred_dir->config.tage.geometric_lengths[0]=16;
+	pred_dir->config.tage.geometric_lengths[1]=8;
+	pred_dir->config.tage.geometric_lengths[2]=4;
+	pred_dir->config.tage.geometric_lengths[3]=2;
 	if(!(pred_dir->config.tage.tag_size=calloc(4,sizeof(int))))
 	{
 		fatal("cannot allocate geometric_lengths ");
 	}
-	pred_dir->config.tage.tag_size[0]=9;
-	pred_dir->config.tage.tag_size[1]=9;
+	pred_dir->config.tage.tag_size[0]=8;
+	pred_dir->config.tage.tag_size[1]=8;
 	pred_dir->config.tage.tag_size[2]=8;
 	pred_dir->config.tage.tag_size[3]=8;
 	for(int i=0;i<4;i++)
@@ -281,348 +281,349 @@ bpred_dir_create (
 		fatal("cannot allocate tag_comp_tag ");
 	}
 	break;
-	
-  case BPred2Level:
-    {
-      if (!l1size || (l1size & (l1size-1)) != 0)
-	fatal("level-1 size, `%d', must be non-zero and a power of two", 
-	      l1size);
-      pred_dir->config.two.l1size = l1size;
-      
-      if (!l2size || (l2size & (l2size-1)) != 0)
-	fatal("level-2 size, `%d', must be non-zero and a power of two", 
-	      l2size);
-      pred_dir->config.two.l2size = l2size;
-      
-      if (!shift_width || shift_width > 30)
-	fatal("shift register width, `%d', must be non-zero and positive",
-	      shift_width);
-      pred_dir->config.two.shift_width = shift_width;
-      
-      pred_dir->config.two.xor = xor;
-      pred_dir->config.two.shiftregs = calloc(l1size, sizeof(int));
-      if (!pred_dir->config.two.shiftregs)
-	fatal("cannot allocate shift register table");
-      
-      pred_dir->config.two.l2table = calloc(l2size, sizeof(unsigned char));
-      if (!pred_dir->config.two.l2table)
-	fatal("cannot allocate second level table");
 
-      /* initialize counters to weakly this-or-that */
-      flipflop = 1;
-      for (cnt = 0; cnt < l2size; cnt++)
+  case BPred2Level:
 	{
-	  pred_dir->config.two.l2table[cnt] = flipflop;
-	  flipflop = 3 - flipflop;
+		if (!l1size || (l1size & (l1size-1)) != 0)
+			fatal("level-1 size, `%d', must be non-zero and a power of two", 
+					l1size);
+		pred_dir->config.two.l1size = l1size;
+
+		if (!l2size || (l2size & (l2size-1)) != 0)
+			fatal("level-2 size, `%d', must be non-zero and a power of two", 
+					l2size);
+		pred_dir->config.two.l2size = l2size;
+
+		if (!shift_width || shift_width > 30)
+			fatal("shift register width, `%d', must be non-zero and positive",
+					shift_width);
+		pred_dir->config.two.shift_width = shift_width;
+
+		pred_dir->config.two.xor = xor;
+		pred_dir->config.two.shiftregs = calloc(l1size, sizeof(int));
+		if (!pred_dir->config.two.shiftregs)
+			fatal("cannot allocate shift register table");
+
+		pred_dir->config.two.l2table = calloc(l2size, sizeof(unsigned char));
+		if (!pred_dir->config.two.l2table)
+			fatal("cannot allocate second level table");
+
+		/* initialize counters to weakly this-or-that */
+		flipflop = 1;
+		for (cnt = 0; cnt < l2size; cnt++)
+		{
+			pred_dir->config.two.l2table[cnt] = flipflop;
+			flipflop = 3 - flipflop;
+		}
+
+		break;
 	}
 
-      break;
-    }
-
   case BPred2bit:
-    if (!l1size || (l1size & (l1size-1)) != 0)
-      fatal("2bit table size, `%d', must be non-zero and a power of two", 
-	    l1size);
-    pred_dir->config.bimod.size = l1size;
-    if (!(pred_dir->config.bimod.table =
-	  calloc(l1size, sizeof(unsigned char))))
-      fatal("cannot allocate 2bit storage");
-    /* initialize counters to weakly this-or-that */
-    flipflop = 1;
-    for (cnt = 0; cnt < l1size; cnt++)
-      {
-	pred_dir->config.bimod.table[cnt] = flipflop;
-	flipflop = 3 - flipflop;
-      }
+	if (!l1size || (l1size & (l1size-1)) != 0)
+		fatal("2bit table size, `%d', must be non-zero and a power of two", 
+				l1size);
+	pred_dir->config.bimod.size = l1size;
+	if (!(pred_dir->config.bimod.table =
+				calloc(l1size, sizeof(unsigned char))))
+		fatal("cannot allocate 2bit storage");
+	/* initialize counters to weakly this-or-that */
+	flipflop = 1;
+	for (cnt = 0; cnt < l1size; cnt++)
+	{
+		pred_dir->config.bimod.table[cnt] = flipflop;
+		flipflop = 3 - flipflop;
+	}
 
-    break;
+	break;
 
   case BPredTaken:
   case BPredNotTaken:
-    /* no other state */
-    break;
+	/* no other state */
+	break;
 
   default:
-    panic("bogus branch direction predictor class");
+	panic("bogus branch direction predictor class");
   }
 
   return pred_dir;
 }
 
 /* print branch direction predictor configuration */
-void
+	void
 bpred_dir_config(
-  struct bpred_dir_t *pred_dir,	/* branch direction predictor instance */
-  char name[],			/* predictor name */
-  FILE *stream)			/* output stream */
+		struct bpred_dir_t *pred_dir,	/* branch direction predictor instance */
+		char name[],			/* predictor name */
+		FILE *stream)			/* output stream */
 {
-  switch (pred_dir->class) {
-  case BPredTage:
-	fprintf(stream,
-      	"pred_dir: %s: tage: %d T1-sz, %d T2-sz, %d T3-sz, %d T4-sz, direct-mapped\n",
-      	name, pred_dir->config.tage.t1size, pred_dir->config.tage.t2size,
-      	pred_dir->config.tage.t3size, pred_dir->config.tage.t4size);
-	break;
-  case BPred2Level:
-    fprintf(stream,
-      "pred_dir: %s: 2-lvl: %d l1-sz, %d bits/ent, %s xor, %d l2-sz, direct-mapped\n",
-      name, pred_dir->config.two.l1size, pred_dir->config.two.shift_width,
-      pred_dir->config.two.xor ? "" : "no", pred_dir->config.two.l2size);
-    break;
+	switch (pred_dir->class) {
+		case BPredTage:
+			fprintf(stream,
+					"pred_dir: %s: tage: %d T1-sz, %d T2-sz, %d T3-sz, %d T4-sz, direct-mapped\n",
+					name, pred_dir->config.tage.t1size, pred_dir->config.tage.t2size,
+					pred_dir->config.tage.t3size, pred_dir->config.tage.t4size);
+			break;
+		case BPred2Level:
+			fprintf(stream,
+					"pred_dir: %s: 2-lvl: %d l1-sz, %d bits/ent, %s xor, %d l2-sz, direct-mapped\n",
+					name, pred_dir->config.two.l1size, pred_dir->config.two.shift_width,
+					pred_dir->config.two.xor ? "" : "no", pred_dir->config.two.l2size);
+			break;
 
-  case BPred2bit:
-    fprintf(stream, "pred_dir: %s: 2-bit: %d entries, direct-mapped\n",
-      name, pred_dir->config.bimod.size);
-    break;
+		case BPred2bit:
+			fprintf(stream, "pred_dir: %s: 2-bit: %d entries, direct-mapped\n",
+					name, pred_dir->config.bimod.size);
+			break;
 
-  case BPredTaken:
-    fprintf(stream, "pred_dir: %s: predict taken\n", name);
-    break;
+		case BPredTaken:
+			fprintf(stream, "pred_dir: %s: predict taken\n", name);
+			break;
 
-  case BPredNotTaken:
-    fprintf(stream, "pred_dir: %s: predict not taken\n", name);
-    break;
+		case BPredNotTaken:
+			fprintf(stream, "pred_dir: %s: predict not taken\n", name);
+			break;
 
-  default:
-    panic("bogus branch direction predictor class");
-  }
+		default:
+			panic("bogus branch direction predictor class");
+	}
 }
 
 /* print branch predictor configuration */
-void
+	void
 bpred_config(struct bpred_t *pred,	/* branch predictor instance */
-	     FILE *stream)		/* output stream */
+		FILE *stream)		/* output stream */
 {
-  switch (pred->class) {
-  case BPredComb:
-    bpred_dir_config (pred->dirpred.bimod, "bimod", stream);
-    bpred_dir_config (pred->dirpred.twolev, "2lev", stream);
-    bpred_dir_config (pred->dirpred.meta, "meta", stream);
-    fprintf(stream, "btb: %d sets x %d associativity", 
-	    pred->btb.sets, pred->btb.assoc);
-    fprintf(stream, "ret_stack: %d entries", pred->retstack.size);
-    break;
-  case BPredTage:
-	bpred_dir_config (pred->dirpred.tage, "tage", stream);
-    fprintf(stream, "btb: %d sets x %d associativity", 
-	    pred->btb.sets, pred->btb.assoc);
-    fprintf(stream, "ret_stack: %d entries", pred->retstack.size);
-	break;
-  case BPred2Level:
-    bpred_dir_config (pred->dirpred.twolev, "2lev", stream);
-    fprintf(stream, "btb: %d sets x %d associativity", 
-	    pred->btb.sets, pred->btb.assoc);
-    fprintf(stream, "ret_stack: %d entries", pred->retstack.size);
-    break;
+	switch (pred->class) {
+		case BPredComb:
+			bpred_dir_config (pred->dirpred.bimod, "bimod", stream);
+			bpred_dir_config (pred->dirpred.twolev, "2lev", stream);
+			bpred_dir_config (pred->dirpred.meta, "meta", stream);
+			fprintf(stream, "btb: %d sets x %d associativity", 
+					pred->btb.sets, pred->btb.assoc);
+			fprintf(stream, "ret_stack: %d entries", pred->retstack.size);
+			break;
+		case BPredTage:
+			bpred_dir_config (pred->dirpred.tage, "tage", stream);
+			fprintf(stream, "btb: %d sets x %d associativity", 
+					pred->btb.sets, pred->btb.assoc);
+			fprintf(stream, "ret_stack: %d entries", pred->retstack.size);
+			break;
+		case BPred2Level:
+			bpred_dir_config (pred->dirpred.twolev, "2lev", stream);
+			fprintf(stream, "btb: %d sets x %d associativity", 
+					pred->btb.sets, pred->btb.assoc);
+			fprintf(stream, "ret_stack: %d entries", pred->retstack.size);
+			break;
 
-  case BPred2bit:
-    bpred_dir_config (pred->dirpred.bimod, "bimod", stream);
-    fprintf(stream, "btb: %d sets x %d associativity", 
-	    pred->btb.sets, pred->btb.assoc);
-    fprintf(stream, "ret_stack: %d entries", pred->retstack.size);
-    break;
+		case BPred2bit:
+			bpred_dir_config (pred->dirpred.bimod, "bimod", stream);
+			fprintf(stream, "btb: %d sets x %d associativity", 
+					pred->btb.sets, pred->btb.assoc);
+			fprintf(stream, "ret_stack: %d entries", pred->retstack.size);
+			break;
 
-  case BPredTaken:
-    bpred_dir_config (pred->dirpred.bimod, "taken", stream);
-    break;
-  case BPredNotTaken:
-    bpred_dir_config (pred->dirpred.bimod, "nottaken", stream);
-    break;
+		case BPredTaken:
+			bpred_dir_config (pred->dirpred.bimod, "taken", stream);
+			break;
+		case BPredNotTaken:
+			bpred_dir_config (pred->dirpred.bimod, "nottaken", stream);
+			break;
 
-  default:
-    panic("bogus branch predictor class");
-  }
+		default:
+			panic("bogus branch predictor class");
+	}
 }
 
 /* print predictor stats */
-void
+	void
 bpred_stats(struct bpred_t *pred,	/* branch predictor instance */
-	    FILE *stream)		/* output stream */
+		FILE *stream)		/* output stream */
 {
-  fprintf(stream, "pred: addr-prediction rate = %f\n",
-	  (double)pred->addr_hits/(double)(pred->addr_hits+pred->misses));
-  fprintf(stream, "pred: dir-prediction rate = %f\n",
-	  (double)pred->dir_hits/(double)(pred->dir_hits+pred->misses));
+	fprintf(stream, "pred: addr-prediction rate = %f\n",
+			(double)pred->addr_hits/(double)(pred->addr_hits+pred->misses));
+	fprintf(stream, "pred: dir-prediction rate = %f\n",
+			(double)pred->dir_hits/(double)(pred->dir_hits+pred->misses));
 }
 
 /* register branch predictor stats */
-void
+	void
 bpred_reg_stats(struct bpred_t *pred,	/* branch predictor instance */
 		struct stat_sdb_t *sdb)	/* stats database */
 {
-  char buf[512], buf1[512], *name;
+	char buf[512], buf1[512], *name;
 
-  /* get a name for this predictor */
-  switch (pred->class)
-    {
-    case BPredComb:
-      name = "bpred_comb";
-    case BPredTage:
-      name = "bpred_tage";
-      break;
-    case BPred2Level:
-      name = "bpred_2lev";
-      break;
-    case BPred2bit:
-      name = "bpred_bimod";
-      break;
-    case BPredTaken:
-      name = "bpred_taken";
-      break;
-    case BPredNotTaken:
-      name = "bpred_nottaken";
-      break;
-    default:
-      panic("bogus branch predictor class");
-    }
+	/* get a name for this predictor */
+	switch (pred->class)
+	{
+		case BPredComb:
+			name = "bpred_comb";
+		case BPredTage:
+			name = "bpred_tage";
+			break;
+		case BPred2Level:
+			name = "bpred_2lev";
+			break;
+		case BPred2bit:
+			name = "bpred_bimod";
+			break;
+		case BPredTaken:
+			name = "bpred_taken";
+			break;
+		case BPredNotTaken:
+			name = "bpred_nottaken";
+			break;
+		default:
+			panic("bogus branch predictor class");
+	}
 
-  sprintf(buf, "%s.lookups", name);
-  stat_reg_counter(sdb, buf, "total number of bpred lookups",
-		   &pred->lookups, 0, NULL);
-  sprintf(buf, "%s.updates", name);
-  sprintf(buf1, "%s.dir_hits + %s.misses", name, name);
-  stat_reg_formula(sdb, buf, "total number of updates", buf1, "%12.0f");
-  sprintf(buf, "%s.addr_hits", name);
-  stat_reg_counter(sdb, buf, "total number of address-predicted hits", 
-		   &pred->addr_hits, 0, NULL);
-  sprintf(buf, "%s.dir_hits", name);
-  stat_reg_counter(sdb, buf, 
-		   "total number of direction-predicted hits "
-		   "(includes addr-hits)", 
-		   &pred->dir_hits, 0, NULL);
-  if (pred->class == BPredComb)
-    {
-      sprintf(buf, "%s.used_bimod", name);
-      stat_reg_counter(sdb, buf, 
-		       "total number of bimodal predictions used", 
-		       &pred->used_bimod, 0, NULL);
-      sprintf(buf, "%s.used_2lev", name);
-      stat_reg_counter(sdb, buf, 
-		       "total number of 2-level predictions used", 
-		       &pred->used_2lev, 0, NULL);
-    }
-  sprintf(buf, "%s.misses", name);
-  stat_reg_counter(sdb, buf, "total number of misses", &pred->misses, 0, NULL);
-  sprintf(buf, "%s.jr_hits", name);
-  stat_reg_counter(sdb, buf,
-		   "total number of address-predicted hits for JR's",
-		   &pred->jr_hits, 0, NULL);
-  sprintf(buf, "%s.jr_seen", name);
-  stat_reg_counter(sdb, buf,
-		   "total number of JR's seen",
-		   &pred->jr_seen, 0, NULL);
-  sprintf(buf, "%s.jr_non_ras_hits.PP", name);
-  stat_reg_counter(sdb, buf,
-		   "total number of address-predicted hits for non-RAS JR's",
-		   &pred->jr_non_ras_hits, 0, NULL);
-  sprintf(buf, "%s.jr_non_ras_seen.PP", name);
-  stat_reg_counter(sdb, buf,
-		   "total number of non-RAS JR's seen",
-		   &pred->jr_non_ras_seen, 0, NULL);
-  sprintf(buf, "%s.bpred_addr_rate", name);
-  sprintf(buf1, "%s.addr_hits / %s.updates", name, name);
-  stat_reg_formula(sdb, buf,
-		   "branch address-prediction rate (i.e., addr-hits/updates)",
-		   buf1, "%9.4f");
-  sprintf(buf, "%s.bpred_dir_rate", name);
-  sprintf(buf1, "%s.dir_hits / %s.updates", name, name);
-  stat_reg_formula(sdb, buf,
-		  "branch direction-prediction rate (i.e., all-hits/updates)",
-		  buf1, "%9.4f");
-  sprintf(buf, "%s.bpred_jr_rate", name);
-  sprintf(buf1, "%s.jr_hits / %s.jr_seen", name, name);
-  stat_reg_formula(sdb, buf,
-		  "JR address-prediction rate (i.e., JR addr-hits/JRs seen)",
-		  buf1, "%9.4f");
-  sprintf(buf, "%s.bpred_jr_non_ras_rate.PP", name);
-  sprintf(buf1, "%s.jr_non_ras_hits.PP / %s.jr_non_ras_seen.PP", name, name);
-  stat_reg_formula(sdb, buf,
-		   "non-RAS JR addr-pred rate (ie, non-RAS JR hits/JRs seen)",
-		   buf1, "%9.4f");
-  sprintf(buf, "%s.retstack_pushes", name);
-  stat_reg_counter(sdb, buf,
-		   "total number of address pushed onto ret-addr stack",
-		   &pred->retstack_pushes, 0, NULL);
-  sprintf(buf, "%s.retstack_pops", name);
-  stat_reg_counter(sdb, buf,
-		   "total number of address popped off of ret-addr stack",
-		   &pred->retstack_pops, 0, NULL);
-  sprintf(buf, "%s.used_ras.PP", name);
-  stat_reg_counter(sdb, buf,
-		   "total number of RAS predictions used",
-		   &pred->used_ras, 0, NULL);
-  sprintf(buf, "%s.ras_hits.PP", name);
-  stat_reg_counter(sdb, buf,
-		   "total number of RAS hits",
-		   &pred->ras_hits, 0, NULL);
-  sprintf(buf, "%s.ras_rate.PP", name);
-  sprintf(buf1, "%s.ras_hits.PP / %s.used_ras.PP", name, name);
-  stat_reg_formula(sdb, buf,
-		   "RAS prediction rate (i.e., RAS hits/used RAS)",
-		   buf1, "%9.4f");
+	sprintf(buf, "%s.lookups", name);
+	stat_reg_counter(sdb, buf, "total number of bpred lookups",
+			&pred->lookups, 0, NULL);
+	sprintf(buf, "%s.updates", name);
+	sprintf(buf1, "%s.dir_hits + %s.misses", name, name);
+	stat_reg_formula(sdb, buf, "total number of updates", buf1, "%12.0f");
+	sprintf(buf, "%s.addr_hits", name);
+	stat_reg_counter(sdb, buf, "total number of address-predicted hits", 
+			&pred->addr_hits, 0, NULL);
+	sprintf(buf, "%s.dir_hits", name);
+	stat_reg_counter(sdb, buf, 
+			"total number of direction-predicted hits "
+			"(includes addr-hits)", 
+			&pred->dir_hits, 0, NULL);
+	if (pred->class == BPredComb)
+	{
+		sprintf(buf, "%s.used_bimod", name);
+		stat_reg_counter(sdb, buf, 
+				"total number of bimodal predictions used", 
+				&pred->used_bimod, 0, NULL);
+		sprintf(buf, "%s.used_2lev", name);
+		stat_reg_counter(sdb, buf, 
+				"total number of 2-level predictions used", 
+				&pred->used_2lev, 0, NULL);
+	}
+	sprintf(buf, "%s.misses", name);
+	stat_reg_counter(sdb, buf, "total number of misses", &pred->misses, 0, NULL);
+	sprintf(buf, "%s.jr_hits", name);
+	stat_reg_counter(sdb, buf,
+			"total number of address-predicted hits for JR's",
+			&pred->jr_hits, 0, NULL);
+	sprintf(buf, "%s.jr_seen", name);
+	stat_reg_counter(sdb, buf,
+			"total number of JR's seen",
+			&pred->jr_seen, 0, NULL);
+	sprintf(buf, "%s.jr_non_ras_hits.PP", name);
+	stat_reg_counter(sdb, buf,
+			"total number of address-predicted hits for non-RAS JR's",
+			&pred->jr_non_ras_hits, 0, NULL);
+	sprintf(buf, "%s.jr_non_ras_seen.PP", name);
+	stat_reg_counter(sdb, buf,
+			"total number of non-RAS JR's seen",
+			&pred->jr_non_ras_seen, 0, NULL);
+	sprintf(buf, "%s.bpred_addr_rate", name);
+	sprintf(buf1, "%s.addr_hits / %s.updates", name, name);
+	stat_reg_formula(sdb, buf,
+			"branch address-prediction rate (i.e., addr-hits/updates)",
+			buf1, "%9.4f");
+	sprintf(buf, "%s.bpred_dir_rate", name);
+	sprintf(buf1, "%s.dir_hits / %s.updates", name, name);
+	stat_reg_formula(sdb, buf,
+			"branch direction-prediction rate (i.e., all-hits/updates)",
+			buf1, "%9.4f");
+	sprintf(buf, "%s.bpred_jr_rate", name);
+	sprintf(buf1, "%s.jr_hits / %s.jr_seen", name, name);
+	stat_reg_formula(sdb, buf,
+			"JR address-prediction rate (i.e., JR addr-hits/JRs seen)",
+			buf1, "%9.4f");
+	sprintf(buf, "%s.bpred_jr_non_ras_rate.PP", name);
+	sprintf(buf1, "%s.jr_non_ras_hits.PP / %s.jr_non_ras_seen.PP", name, name);
+	stat_reg_formula(sdb, buf,
+			"non-RAS JR addr-pred rate (ie, non-RAS JR hits/JRs seen)",
+			buf1, "%9.4f");
+	sprintf(buf, "%s.retstack_pushes", name);
+	stat_reg_counter(sdb, buf,
+			"total number of address pushed onto ret-addr stack",
+			&pred->retstack_pushes, 0, NULL);
+	sprintf(buf, "%s.retstack_pops", name);
+	stat_reg_counter(sdb, buf,
+			"total number of address popped off of ret-addr stack",
+			&pred->retstack_pops, 0, NULL);
+	sprintf(buf, "%s.used_ras.PP", name);
+	stat_reg_counter(sdb, buf,
+			"total number of RAS predictions used",
+			&pred->used_ras, 0, NULL);
+	sprintf(buf, "%s.ras_hits.PP", name);
+	stat_reg_counter(sdb, buf,
+			"total number of RAS hits",
+			&pred->ras_hits, 0, NULL);
+	sprintf(buf, "%s.ras_rate.PP", name);
+	sprintf(buf1, "%s.ras_hits.PP / %s.used_ras.PP", name, name);
+	stat_reg_formula(sdb, buf,
+			"RAS prediction rate (i.e., RAS hits/used RAS)",
+			buf1, "%9.4f");
 }
 
-void
+	void
 bpred_after_priming(struct bpred_t *bpred)
 {
-  if (bpred == NULL)
-    return;
+	if (bpred == NULL)
+		return;
 
-  bpred->lookups = 0;
-  bpred->addr_hits = 0;
-  bpred->dir_hits = 0;
-  bpred->used_ras = 0;
-  bpred->used_bimod = 0;
-  bpred->used_2lev = 0;
-  bpred->jr_hits = 0;
-  bpred->jr_seen = 0;
-  bpred->misses = 0;
-  bpred->retstack_pops = 0;
-  bpred->retstack_pushes = 0;
-  bpred->ras_hits = 0;
+	bpred->lookups = 0;
+	bpred->addr_hits = 0;
+	bpred->dir_hits = 0;
+	bpred->used_ras = 0;
+	bpred->used_bimod = 0;
+	bpred->used_2lev = 0;
+	bpred->jr_hits = 0;
+	bpred->jr_seen = 0;
+	bpred->misses = 0;
+	bpred->retstack_pops = 0;
+	bpred->retstack_pushes = 0;
+	bpred->ras_hits = 0;
 }
 
 #define BIMOD_HASH(PRED, ADDR)						\
-  ((((ADDR) >> 19) ^ ((ADDR) >> MD_BR_SHIFT)) & ((PRED)->config.bimod.size-1))
-    /* was: ((baddr >> 16) ^ baddr) & (pred->dirpred.bimod.size-1) */
+	((((ADDR) >> 19) ^ ((ADDR) >> MD_BR_SHIFT)) & ((PRED)->config.bimod.size-1))
+/* was: ((baddr >> 16) ^ baddr) & (pred->dirpred.bimod.size-1) */
 
 /* predicts a branch direction */
-char *						/* pointer to counter */
+	char *						/* pointer to counter */
 bpred_dir_lookup(struct bpred_dir_t *pred_dir,	/* branch dir predictor inst */
-		 md_addr_t baddr)		/* branch address */
+		md_addr_t baddr)		/* branch address */
 {
-  unsigned char *p = NULL;
+	unsigned char *p = NULL;
 
-  /* Except for jumps, get a pointer to direction-prediction bits */
-  switch (pred_dir->class) {
-    case BPredTage:
-	{		    
-		int tag_comp_tag[4];
-		pred_dir->config.tage.altTagComp=4;
-		pred_dir->config.tage.folded_history_index[3].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)-3))^(pred_dir->config.tage.folded_history_index[3].folded_history)^(pred_dir->config.tage.path_history&7);
-		pred_dir->config.tage.folded_history_index[2].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)-2))^(pred_dir->config.tage.folded_history_index[2].folded_history)^(pred_dir->config.tage.path_history&31);
-		pred_dir->config.tage.folded_history_index[1].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)-1))^(pred_dir->config.tage.folded_history_index[1].folded_history)^(pred_dir->config.tage.path_history);
-		pred_dir->config.tage.folded_history_index[0].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)))^(pred_dir->config.tage.folded_history_index[0].folded_history)^(pred_dir->config.tage.path_history);//^(pred_dir->config.tage.path_history >> ((int)log2(pred_dir->config.tage.t1size)));
-		for(int i=0;i<4;i++)
-		{
-			pred_dir->config.tage.folded_history_index[i].tag_comp_index &=((1<<(int)log2(pred_dir->config.tage.t1size))-1);
-		}
-		for(int i=0;i<4;i++)
-		{
-			tag_comp_tag[i]=baddr^(pred_dir->config.tage.folded_history_tag[0][i].folded_history)^(pred_dir->config.tage.folded_history_tag[1][i].folded_history<<1);
-			tag_comp_tag[i] &=((1<<pred_dir->config.tage.tag_size[i])-1);	
-		}
-		pred_dir->config.tage.tag_comp_tag=tag_comp_tag;
-		//Base Prediction 
-		int base_pred_index =((((baddr) >> 19) ^ ((baddr) >> MD_BR_SHIFT)) & (2048-1));
-		p=&(pred_dir->config.tage.bimod[base_pred_index].ctr);
-		pred_dir->config.tage.isBimodal=1;
-	        //Searching for matching tag starting from Tag Component 0
-		for(int i=0;i<4;i++)
-		{
-			if(pred_dir->config.tage.tag_comp_entry[i][pred_dir->config.tage.folded_history_index[i].tag_comp_index].tag==tag_comp_tag[i])
-			{
-				pred_dir->config.tage.primeTagComp=i;
+	/* Except for jumps, get a pointer to direction-prediction bits */
+	switch (pred_dir->class) {
+		case BPredTage:
+			{		    
+				int tag_comp_tag[4];
+				pred_dir->config.tage.altTagComp=4;
+				pred_dir->config.tage.primeTagComp=4;
+				pred_dir->config.tage.folded_history_index[3].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)))^(pred_dir->config.tage.folded_history_index[3].folded_history);//^(pred_dir->config.tage.path_histoiry&7);
+				pred_dir->config.tage.folded_history_index[2].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)))^(pred_dir->config.tage.folded_history_index[2].folded_history);//^(pred_dir->config.tage.path_history&31);
+				pred_dir->config.tage.folded_history_index[1].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)))^(pred_dir->config.tage.folded_history_index[1].folded_history);//^(pred_dir->config.tage.path_history);
+				pred_dir->config.tage.folded_history_index[0].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)))^(pred_dir->config.tage.folded_history_index[0].folded_history);//^(pred_dir->config.tage.path_history)^(pred_dir->config.tage.path_history >> ((int)log2(pred_dir->config.tage.t1size)));
+				for(int i=0;i<4;i++)
+				{
+					pred_dir->config.tage.folded_history_index[i].tag_comp_index &=((1<<(int)log2(pred_dir->config.tage.t1size))-1);
+				}
+				for(int i=0;i<4;i++)
+				{
+					tag_comp_tag[i]=baddr^(pred_dir->config.tage.folded_history_tag[0][i].folded_history)^(pred_dir->config.tage.folded_history_tag[1][i].folded_history<<1);
+					tag_comp_tag[i] &=((1<<pred_dir->config.tage.tag_size[i])-1);	
+				}
+				pred_dir->config.tage.tag_comp_tag=tag_comp_tag;
+				//Base Prediction 
+				int base_pred_index =((((baddr) >> 19) ^ ((baddr) >> MD_BR_SHIFT)) & (4096-1));
+				p=&(pred_dir->config.tage.bimod[base_pred_index].ctr);
+				pred_dir->config.tage.isBimodal=1;
+				//Searching for matching tag starting from Tag Component 0
+				for(int i=0;i<4;i++)
+				{
+					if(pred_dir->config.tage.tag_comp_entry[i][pred_dir->config.tage.folded_history_index[i].tag_comp_index].tag==tag_comp_tag[i])
+					{
+						pred_dir->config.tage.primeTagComp=i;
 				break;
 			}
 		}
@@ -639,15 +640,13 @@ bpred_dir_lookup(struct bpred_dir_t *pred_dir,	/* branch dir predictor inst */
 		{	
 			struct tag_comp_entry *temp_tag_comp_entry;
 			temp_tag_comp_entry=&(pred_dir->config.tage.tag_comp_entry[pred_dir->config.tage.primeTagComp][pred_dir->config.tage.folded_history_index[pred_dir->config.tage.primeTagComp].tag_comp_index]);
-			int alt_tag_table_index = pred_dir->config.tage.altTagComp;
-			int tag_index=pred_dir->config.tage.folded_history_index[alt_tag_table_index].tag_comp_index;
-
 			if(pred_dir->config.tage.altTagComp==4)
 			{
 				pred_dir->config.tage.altPred=(*p>>1)&1;
 			}
 			else
-			{	
+			{	int alt_tag_table_index = pred_dir->config.tage.altTagComp;
+				int tag_index=pred_dir->config.tage.folded_history_index[alt_tag_table_index].tag_comp_index;
 				pred_dir->config.tage.isBimodal=0;
 				p=&(pred_dir->config.tage.tag_comp_entry[alt_tag_table_index][tag_index].ctr);
 				pred_dir->config.tage.altPred=(pred_dir->config.tage.tag_comp_entry[alt_tag_table_index][tag_index].ctr>>((int)ceil(log2(7))-1))&1;
@@ -1124,16 +1123,38 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 	{
 		if((!!pred_taken)!=(!!pred->dirpred.tage->config.tage.altPred))
 		{
-			if((!!pred_taken)==(!!taken))
+			if(pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].useful_entry!=0 || pred->dirpred.tage->config.tage.use_alt_on_na<8)
 			{
-				if (*dir_update_ptr->pdir1 < 3)
-					++pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].useful_entry;
+				if((!!pred_taken)==(!!taken))
+				{
+					if (*dir_update_ptr->pdir1 < 3)
+						++pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].useful_entry;
+				}
+				else
+				{
+					if (*dir_update_ptr->pdir1 > 0)
+						--pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].useful_entry;
+				}
+			}
+		}
+		if(pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].useful_entry==0 && pred->dirpred.tage->config.tage.use_alt_on_na>=8)
+		{
+			if(taken)
+			{
+				if(pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].ctr > 7)
+				{
+					++pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].ctr;
+				}
 			}
 			else
 			{
-				if (*dir_update_ptr->pdir1 > 0)
-					--pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].useful_entry;
+				if(pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].ctr < 0)
+				{
+					--pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].ctr;
+
+				}
 			}
+	
 		}
 		if (taken)
 		{
@@ -1202,7 +1223,6 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 			int randomNumber = rand()%100;
 			int numberOfZeroUsefulEntry=0;
 			int choosen_tag_table=0;
-			int table_1;
 			for(int i=(pred->dirpred.tage->config.tage.primeTagComp-1);i>=0;i--)
 			{
 				if(pred->dirpred.tage->config.tage.tag_comp_entry[i][pred->dirpred.tage->config.tage.folded_history_index[i].tag_comp_index].useful_entry == 0)
@@ -1217,7 +1237,18 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 					{
 						if(randomNumber<=33)
 						{
-							choosen_tag_table = i;
+							if(numberOfZeroUsefulEntry == 2)
+							{
+								choosen_tag_table = i;
+							}
+							else
+							{
+								randomNumber = rand()%100;
+								if(randomNumber<=33)
+								{
+									choosen_tag_table=i;
+								}
+							}
 						}
 						break;
 					}
@@ -1284,22 +1315,16 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 	for(int i=0;i<4;i++)
 	{
 		pred->dirpred.tage->config.tage.folded_history_index[i].folded_history =(pred->dirpred.tage->config.tage.folded_history_index[i].folded_history<<1)^( pred->dirpred.tage->config.tage.folded_history_index[i].folded_history>>(pred->dirpred.tage->config.tage.folded_history_index[i].folded_length-1))^(pred->dirpred.tage->config.tage.geometric_history[0]);
-	     	int temp1 =  (pred->dirpred.tage->config.tage.folded_history_index[i].folded_history>>(pred->dirpred.tage->config.tage.geometric_lengths[i]%pred->dirpred.tage->config.tage.folded_history_index[i].folded_length))^(pred->dirpred.tage->config.tage.geometric_history[pred->dirpred.tage->config.tage.geometric_lengths[i]]);
-		temp1=(temp1&1)<<(pred->dirpred.tage->config.tage.geometric_lengths[i]%pred->dirpred.tage->config.tage.folded_history_index[i].folded_length);
-		pred->dirpred.tage->config.tage.folded_history_index[i].folded_history ^=temp1;
-		pred->dirpred.tage->config.tage.folded_history_index[i].folded_history &=temp1;
+		pred->dirpred.tage->config.tage.folded_history_index[i].folded_history^=pred->dirpred.tage->config.tage.geometric_history[pred->dirpred.tage->config.tage.geometric_lengths[i]]<<(pred->dirpred.tage->config.tage.geometric_lengths[i]%pred->dirpred.tage->config.tage.folded_history_index[i].folded_length);
+		pred->dirpred.tage->config.tage.folded_history_index[i].folded_history&=((1<<pred->dirpred.tage->config.tage.folded_history_index[i].folded_length)-1);
 		pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history =(pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history<<1)^( pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history>>(pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_length-1))^(pred->dirpred.tage->config.tage.geometric_history[0]);
-	     	temp1 =  (pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history>>(pred->dirpred.tage->config.tage.geometric_lengths[i]%pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_length))^(pred->dirpred.tage->config.tage.geometric_history[pred->dirpred.tage->config.tage.geometric_lengths[i]]);
-		temp1=(temp1&1)<<(pred->dirpred.tage->config.tage.geometric_lengths[i]%pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_length);
-		pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history ^=temp1;
-		pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history &=temp1;
+	     	pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history^=pred->dirpred.tage->config.tage.geometric_history[pred->dirpred.tage->config.tage.geometric_lengths[i]]<<(pred->dirpred.tage->config.tage.geometric_lengths[i]%pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_length);
+		pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history&=((1<<pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_length)-1);
 		pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history =(pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history<<1)^( pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history>>(pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_length-1))^(pred->dirpred.tage->config.tage.geometric_history[0]);
-	     	temp1 =  (pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history>>(pred->dirpred.tage->config.tage.geometric_lengths[i]%pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_length))^(pred->dirpred.tage->config.tage.geometric_history[pred->dirpred.tage->config.tage.geometric_lengths[i]]);
-		temp1=(temp1&1)<<(pred->dirpred.tage->config.tage.geometric_lengths[i]%pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_length);
-		pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history ^=temp1;
-		pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history &=temp1;
+	     	pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history^=pred->dirpred.tage->config.tage.geometric_history[pred->dirpred.tage->config.tage.geometric_lengths[i]]<<(pred->dirpred.tage->config.tage.geometric_lengths[i]%pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_length);
+		pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history&=((1<<pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_length)-1);
+		pred->dirpred.tage->config.tage.path_history = pred->dirpred.tage->config.tage.path_history<<1;
 	}
-	pred->dirpred.tage->config.tage.path_history = pred->dirpred.tage->config.tage.path_history<<1;
 	if(baddr&1)
 	{
 		pred->dirpred.tage->config.tage.path_history=pred->dirpred.tage->config.tage.path_history+1;
