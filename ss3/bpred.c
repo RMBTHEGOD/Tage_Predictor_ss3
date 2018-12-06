@@ -59,6 +59,7 @@
 #include "machine.h"
 #include "bpred.h"
 
+
 /* turn this on to enable the SimpleScalar 2.0 RAS bug */
 /* #define RAS_BUG_COMPATIBLE */
 
@@ -94,26 +95,26 @@ bpred_create(enum bpred_class class,	/* type of predictor to create */
 
     /* metapredictor component */
     pred->dirpred.meta = 
-      bpred_dir_create(BPred2bit, meta_size, 0, 0, 0);
+	    bpred_dir_create(BPred2bit, meta_size, 0, 0, 0);
 
     break;
- 
+
   case BPredTage:
-	pred->dirpred.tage = bpred_dir_create(class, /*T1 Size*/l1size, /*T2 Size*/l2size, /*T3 Size*/shift_width,/*T4 Size*/xor);
-	if(!(pred->dirpred.tage->config.tage.bimod=calloc(bimod_size,sizeof(struct bimod_predictor))))
-	{
-		fatal("Cannot allocated memory for bimodal predictor");
-	}
-	break;
+    pred->dirpred.tage = bpred_dir_create(class, /*T1 Size*/l1size, /*T2 Size*/l2size, /*T3 Size*/shift_width,/*T4 Size*/xor);
+    if(!(pred->dirpred.tage->config.tage.bimod=calloc(1024,sizeof(struct bimod_predictor))))
+    {
+	    fatal("Cannot allocated memory for bimodal predictor");
+    }
+    break;
   case BPred2Level:
     pred->dirpred.twolev = 
-      bpred_dir_create(class, l1size, l2size, shift_width, xor);
+	    bpred_dir_create(class, l1size, l2size, shift_width, xor);
 
     break;
 
   case BPred2bit:
     pred->dirpred.bimod =  
-      bpred_dir_create(class, bimod_size, 0, 0, 0);
+	    bpred_dir_create(class, bimod_size, 0, 0, 0);
 
   case BPredTaken:
   case BPredNotTaken:
@@ -126,227 +127,233 @@ bpred_create(enum bpred_class class,	/* type of predictor to create */
 
   /* allocate ret-addr stack */
   switch (class) {
-  case BPredComb:
-  case BPred2Level:
-  case BPredTage:
-  case BPred2bit:
-    {
-      int i;
+	  case BPredComb:
+	  case BPred2Level:
+	  case BPredTage:
+	  case BPred2bit:
+		  {
+			  int i;
 
-      /* allocate BTB */
-      if (!btb_sets || (btb_sets & (btb_sets-1)) != 0)
-	fatal("number of BTB sets must be non-zero and a power of two");
-      if (!btb_assoc || (btb_assoc & (btb_assoc-1)) != 0)
-	fatal("BTB associativity must be non-zero and a power of two");
+			  /* allocate BTB */
+			  if (!btb_sets || (btb_sets & (btb_sets-1)) != 0)
+				  fatal("number of BTB sets must be non-zero and a power of two");
+			  if (!btb_assoc || (btb_assoc & (btb_assoc-1)) != 0)
+				  fatal("BTB associativity must be non-zero and a power of two");
 
-      if (!(pred->btb.btb_data = calloc(btb_sets * btb_assoc,
-					sizeof(struct bpred_btb_ent_t))))
-	fatal("cannot allocate BTB");
+			  if (!(pred->btb.btb_data = calloc(btb_sets * btb_assoc,
+							  sizeof(struct bpred_btb_ent_t))))
+				  fatal("cannot allocate BTB");
 
-      pred->btb.sets = btb_sets;
-      pred->btb.assoc = btb_assoc;
+			  pred->btb.sets = btb_sets;
+			  pred->btb.assoc = btb_assoc;
 
-      if (pred->btb.assoc > 1)
-	for (i=0; i < (pred->btb.assoc*pred->btb.sets); i++)
-	  {
-	    if (i % pred->btb.assoc != pred->btb.assoc - 1)
-	      pred->btb.btb_data[i].next = &pred->btb.btb_data[i+1];
-	    else
-	      pred->btb.btb_data[i].next = NULL;
-	    
-	    if (i % pred->btb.assoc != pred->btb.assoc - 1)
-	      pred->btb.btb_data[i+1].prev = &pred->btb.btb_data[i];
-	  }
+			  if (pred->btb.assoc > 1)
+				  for (i=0; i < (pred->btb.assoc*pred->btb.sets); i++)
+				  {
+					  if (i % pred->btb.assoc != pred->btb.assoc - 1)
+						  pred->btb.btb_data[i].next = &pred->btb.btb_data[i+1];
+					  else
+						  pred->btb.btb_data[i].next = NULL;
 
-      /* allocate retstack */
-      if ((retstack_size & (retstack_size-1)) != 0)
-	fatal("Return-address-stack size must be zero or a power of two");
-      
-      pred->retstack.size = retstack_size;
-      if (retstack_size)
-	if (!(pred->retstack.stack = calloc(retstack_size, 
-					    sizeof(struct bpred_btb_ent_t))))
-	  fatal("cannot allocate return-address-stack");
-      pred->retstack.tos = retstack_size - 1;
-      
-      break;
-    }
+					  if (i % pred->btb.assoc != pred->btb.assoc - 1)
+						  pred->btb.btb_data[i+1].prev = &pred->btb.btb_data[i];
+				  }
 
-  case BPredTaken:
-  case BPredNotTaken:
-    /* no other state */
-    break;
-   default:
-    panic("bogus predictor class");
+			  /* allocate retstack */
+			  if ((retstack_size & (retstack_size-1)) != 0)
+				  fatal("Return-address-stack size must be zero or a power of two");
+
+			  pred->retstack.size = retstack_size;
+			  if (retstack_size)
+				  if (!(pred->retstack.stack = calloc(retstack_size, 
+								  sizeof(struct bpred_btb_ent_t))))
+					  fatal("cannot allocate return-address-stack");
+			  pred->retstack.tos = retstack_size - 1;
+
+			  break;
+		  }
+
+	  case BPredTaken:
+	  case BPredNotTaken:
+		  /* no other state */
+		  break;
+	  default:
+		  panic("bogus predictor class");
   }
 
   return pred;
 }
 
 /* create a branch direction predictor */
-struct bpred_dir_t *		/* branch direction predictor instance */
+	struct bpred_dir_t *		/* branch direction predictor instance */
 bpred_dir_create (
-  enum bpred_class class,	/* type of predictor to create */
-  unsigned int l1size,	 	/* level-1 table size */
-  unsigned int l2size,	 	/* level-2 table size (if relevant) */
-  unsigned int shift_width,	/* history register width */
-  unsigned int xor)	    	/* history xor address flag */
+		enum bpred_class class,	/* type of predictor to create */
+		unsigned int l1size,	 	/* level-1 table size */
+		unsigned int l2size,	 	/* level-2 table size (if relevant) */
+		unsigned int shift_width,	/* history register width */
+		unsigned int xor)	    	/* history xor address flag */
 {
-  struct bpred_dir_t *pred_dir;
-  unsigned int cnt;
-  int flipflop;
+	struct bpred_dir_t *pred_dir;
+	unsigned int cnt;
+	int flipflop;
 
-  if (!(pred_dir = calloc(1, sizeof(struct bpred_dir_t))))
-    fatal("out of virtual memory");
+	if (!(pred_dir = calloc(1, sizeof(struct bpred_dir_t))))
+		fatal("out of virtual memory");
 
-  pred_dir->class = class;
-  cnt = -1;
-  switch (class) {
-  case BPredTage:
- 	if (!l1size || (l1size & (l1size-1)) != 0)
-		fatal("T-1 size, `%d', must be non-zero and a power of two", 
-	      l1size);
-      	pred_dir->config.tage.t1size = l1size;
-      
-      	if (!l2size || (l2size & (l2size-1)) != 0)
-		fatal("T-2 size, `%d', must be non-zero and a power of two", 
-	      l2size);
-      	pred_dir->config.tage.t2size = l2size;
-      
-      	if (!shift_width || (shift_width & (shift_width-1)) != 0)
-		fatal("T-3 size, `%d', must be non-zero and a power of two", 
-	      shift_width);
-      	pred_dir->config.tage.t3size = shift_width;
-	if (!xor || (xor & (xor-1)) != 0)
-		fatal("T-4 size, `%d', must be non-zero and a power of two", 
-	      xor);
-      	pred_dir->config.tage.t4size = xor;
-	pred_dir->config.tage.clock=0;
-	pred_dir->config.tage.clock_flip=1;
-	pred_dir->config.tage.primePred=-1;
-	pred_dir->config.tage.altPred=-1;
-	pred_dir->config.tage.primeTagComp=4;
-	pred_dir->config.tage.altTagComp=4;
-	if(!(pred_dir->config.tage.geometric_lengths=calloc(4,sizeof(int))))
-	{
-		fatal("cannot allocate geometric_lengths ");
+	pred_dir->class = class;
+	cnt = -1;
+	switch (class) {
+		case BPredTage:
+			if (!l1size || (l1size & (l1size-1)) != 0)
+				fatal("T-1 size, `%d', must be non-zero and a power of two", 
+						l1size);
+			pred_dir->config.tage.t1size = l1size;
+
+			if (!l2size || (l2size & (l2size-1)) != 0)
+				fatal("T-2 size, `%d', must be non-zero and a power of two", 
+						l2size);
+			pred_dir->config.tage.t2size = l2size;
+
+			if (!shift_width || (shift_width & (shift_width-1)) != 0)
+				fatal("T-3 size, `%d', must be non-zero and a power of two", 
+						shift_width);
+			pred_dir->config.tage.t3size = shift_width;
+			if (!xor || (xor & (xor-1)) != 0)
+				fatal("T-4 size, `%d', must be non-zero and a power of two", 
+						xor);
+			pred_dir->config.tage.t4size = xor;
+			pred_dir->config.tage.clock=0;
+			pred_dir->config.tage.clock_flip=1;
+			pred_dir->config.tage.primePred=-1;
+			pred_dir->config.tage.altPred=-1;
+			pred_dir->config.tage.primeTagComp=NUMBEROFTAGTABLE;
+			pred_dir->config.tage.altTagComp=NUMBEROFTAGTABLE;
+			if(!(pred_dir->config.tage.geometric_lengths=calloc(NUMBEROFTAGTABLE,sizeof(int))))
+			{
+				fatal("cannot allocate geometric_lengths ");
+			}
+			pred_dir->config.tage.geometric_lengths[0]=128;
+			pred_dir->config.tage.geometric_lengths[1]=64;
+			pred_dir->config.tage.geometric_lengths[2]=32;
+			pred_dir->config.tage.geometric_lengths[3]=16;
+			if(!(pred_dir->config.tage.tag_size=calloc(NUMBEROFTAGTABLE,sizeof(int))))
+			{
+				fatal("cannot allocate geometric_lengths ");
+			}
+			pred_dir->config.tage.tag_size[0]=8;
+			pred_dir->config.tage.tag_size[1]=8;
+			pred_dir->config.tage.tag_size[2]=8;
+			pred_dir->config.tage.tag_size[3]=8;
+			for(int i=0;i<NUMBEROFTAGTABLE;i++)
+			{
+				if(!(pred_dir->config.tage.tag_comp_entry[i]=calloc(l1size,sizeof(struct tag_comp_entry))))
+				{
+					fatal("cannot allocate tage_comp_table ");
+				}
+				for(int j=0;j<l1size;j++)
+				{
+					pred_dir->config.tage.tag_comp_entry[i][j].tag=-1;
+				}
+			}
+			if(!(pred_dir->config.tage.folded_history_index=calloc(NUMBEROFTAGTABLE,sizeof(struct folded_history))))
+			{
+				fatal("cannot allocate folded_history_index ");
+			}
+			for(int i=0;i<2;i++)
+				if(!(pred_dir->config.tage.folded_history_tag[i]=calloc(NUMBEROFTAGTABLE,sizeof(struct folded_history))))
+				{
+					fatal("cannot allocate folded_history_tag for table ");
+				}
+			for(int i=0;i<NUMBEROFTAGTABLE;i++)
+			{
+				pred_dir->config.tage.folded_history_index[i].folded_length=(int)(log2(l1size));
+				pred_dir->config.tage.folded_history_tag[0][i].folded_length=pred_dir->config.tage.tag_size[i];
+				pred_dir->config.tage.folded_history_tag[1][i].folded_length=pred_dir->config.tage.tag_size[i]-1;
+
+
+			}
+			pred_dir->config.tage.use_alt_on_na=8;
+			if(!(pred_dir->config.tage.geometric_history=calloc(pred_dir->config.tage.geometric_lengths[0]+1,sizeof(unsigned int))))
+			{
+				fatal("cannot allocate geometric_lengths ");
+			}
+			pred_dir->config.tage.path_history=0;
+			if(!(pred_dir->config.tage.tag_comp_index=calloc(NUMBEROFTAGTABLE,sizeof(int))))
+			{
+				fatal("cannot allocate tag_comp_index");
+			}
+			if(!(pred_dir->config.tage.tag_comp_tag=calloc(NUMBEROFTAGTABLE,sizeof(int))))
+			{
+				fatal("cannot allocate tag_comp_tag");
+			}
+
+			break;
+
+		case BPred2Level:
+			{
+				if (!l1size || (l1size & (l1size-1)) != 0)
+					fatal("level-1 size, `%d', must be non-zero and a power of two", 
+							l1size);
+				pred_dir->config.two.l1size = l1size;
+
+				if (!l2size || (l2size & (l2size-1)) != 0)
+					fatal("level-2 size, `%d', must be non-zero and a power of two", 
+							l2size);
+				pred_dir->config.two.l2size = l2size;
+
+				if (!shift_width || shift_width > 30)
+					fatal("shift register width, `%d', must be non-zero and positive",
+							shift_width);
+				pred_dir->config.two.shift_width = shift_width;
+
+				pred_dir->config.two.xor = xor;
+				pred_dir->config.two.shiftregs = calloc(l1size, sizeof(int));
+				if (!pred_dir->config.two.shiftregs)
+					fatal("cannot allocate shift register table");
+
+				pred_dir->config.two.l2table = calloc(l2size, sizeof(unsigned char));
+				if (!pred_dir->config.two.l2table)
+					fatal("cannot allocate second level table");
+
+				/* initialize counters to weakly this-or-that */
+				flipflop = 1;
+				for (cnt = 0; cnt < l2size; cnt++)
+				{
+					pred_dir->config.two.l2table[cnt] = flipflop;
+					flipflop = 3 - flipflop;
+				}
+
+				break;
+			}
+
+		case BPred2bit:
+			if (!l1size || (l1size & (l1size-1)) != 0)
+				fatal("2bit table size, `%d', must be non-zero and a power of two", 
+						l1size);
+			pred_dir->config.bimod.size = l1size;
+			if (!(pred_dir->config.bimod.table =
+						calloc(l1size, sizeof(unsigned char))))
+				fatal("cannot allocate 2bit storage");
+			/* initialize counters to weakly this-or-that */
+			flipflop = 1;
+			for (cnt = 0; cnt < l1size; cnt++)
+			{
+				pred_dir->config.bimod.table[cnt] = flipflop;
+				flipflop = 3 - flipflop;
+			}
+
+			break;
+
+		case BPredTaken:
+		case BPredNotTaken:
+			/* no other state */
+			break;
+
+		default:
+			panic("bogus branch direction predictor class");
 	}
-	pred_dir->config.tage.geometric_lengths[0]=16;
-	pred_dir->config.tage.geometric_lengths[1]=8;
-	pred_dir->config.tage.geometric_lengths[2]=4;
-	pred_dir->config.tage.geometric_lengths[3]=2;
-	if(!(pred_dir->config.tage.tag_size=calloc(4,sizeof(int))))
-	{
-		fatal("cannot allocate geometric_lengths ");
-	}
-	pred_dir->config.tage.tag_size[0]=8;
-	pred_dir->config.tage.tag_size[1]=8;
-	pred_dir->config.tage.tag_size[2]=8;
-	pred_dir->config.tage.tag_size[3]=8;
-	for(int i=0;i<4;i++)
-	{
-		if(!(pred_dir->config.tage.tag_comp_entry[i]=calloc(l1size,sizeof(struct tag_comp_entry))))
-		{
-			fatal("cannot allocate tage_comp_table ");
-		}
-	}
-	if(!(pred_dir->config.tage.folded_history_index=calloc(4,sizeof(struct folded_history))))
-	{
-		fatal("cannot allocate folded_history_index ");
-	}
-	for(int i=0;i<2;i++)
-		if(!(pred_dir->config.tage.folded_history_tag[i]=calloc(4,sizeof(struct folded_history))))
-		{
-			fatal("cannot allocate folded_history_tag for table ");
-		}
-	for(int i=0;i<4;i++)
-	{
-		pred_dir->config.tage.folded_history_index[i].folded_length=(int)(log2(l1size));
-		pred_dir->config.tage.folded_history_index[i].geometric_length=pred_dir->config.tage.geometric_lengths[i];
-		pred_dir->config.tage.folded_history_tag[0][i].folded_length=pred_dir->config.tage.tag_size[i];
-		pred_dir->config.tage.folded_history_tag[0][i].geometric_length=pred_dir->config.tage.geometric_lengths[i];
-		pred_dir->config.tage.folded_history_tag[1][i].folded_length=pred_dir->config.tage.tag_size[i];
-		pred_dir->config.tage.folded_history_tag[1][i].geometric_length=pred_dir->config.tage.geometric_lengths[i];
 
-
-	}
-	pred_dir->config.tage.use_alt_on_na=8;
-	if(!(pred_dir->config.tage.geometric_history=calloc(pred_dir->config.tage.geometric_lengths[0]+1,sizeof(unsigned int))))
-	{
-		fatal("cannot allocate geometric_lengths ");
-	}
-	pred_dir->config.tage.path_history=0;
-	if(!(pred_dir->config.tage.tag_comp_tag=calloc(4,sizeof(int))))
-	{
-		fatal("cannot allocate tag_comp_tag ");
-	}
-	break;
-
-  case BPred2Level:
-	{
-		if (!l1size || (l1size & (l1size-1)) != 0)
-			fatal("level-1 size, `%d', must be non-zero and a power of two", 
-					l1size);
-		pred_dir->config.two.l1size = l1size;
-
-		if (!l2size || (l2size & (l2size-1)) != 0)
-			fatal("level-2 size, `%d', must be non-zero and a power of two", 
-					l2size);
-		pred_dir->config.two.l2size = l2size;
-
-		if (!shift_width || shift_width > 30)
-			fatal("shift register width, `%d', must be non-zero and positive",
-					shift_width);
-		pred_dir->config.two.shift_width = shift_width;
-
-		pred_dir->config.two.xor = xor;
-		pred_dir->config.two.shiftregs = calloc(l1size, sizeof(int));
-		if (!pred_dir->config.two.shiftregs)
-			fatal("cannot allocate shift register table");
-
-		pred_dir->config.two.l2table = calloc(l2size, sizeof(unsigned char));
-		if (!pred_dir->config.two.l2table)
-			fatal("cannot allocate second level table");
-
-		/* initialize counters to weakly this-or-that */
-		flipflop = 1;
-		for (cnt = 0; cnt < l2size; cnt++)
-		{
-			pred_dir->config.two.l2table[cnt] = flipflop;
-			flipflop = 3 - flipflop;
-		}
-
-		break;
-	}
-
-  case BPred2bit:
-	if (!l1size || (l1size & (l1size-1)) != 0)
-		fatal("2bit table size, `%d', must be non-zero and a power of two", 
-				l1size);
-	pred_dir->config.bimod.size = l1size;
-	if (!(pred_dir->config.bimod.table =
-				calloc(l1size, sizeof(unsigned char))))
-		fatal("cannot allocate 2bit storage");
-	/* initialize counters to weakly this-or-that */
-	flipflop = 1;
-	for (cnt = 0; cnt < l1size; cnt++)
-	{
-		pred_dir->config.bimod.table[cnt] = flipflop;
-		flipflop = 3 - flipflop;
-	}
-
-	break;
-
-  case BPredTaken:
-  case BPredNotTaken:
-	/* no other state */
-	break;
-
-  default:
-	panic("bogus branch direction predictor class");
-  }
-
-  return pred_dir;
+	return pred_dir;
 }
 
 /* print branch direction predictor configuration */
@@ -369,7 +376,6 @@ bpred_dir_config(
 					name, pred_dir->config.two.l1size, pred_dir->config.two.shift_width,
 					pred_dir->config.two.xor ? "" : "no", pred_dir->config.two.l2size);
 			break;
-
 		case BPred2bit:
 			fprintf(stream, "pred_dir: %s: 2-bit: %d entries, direct-mapped\n",
 					name, pred_dir->config.bimod.size);
@@ -597,71 +603,80 @@ bpred_dir_lookup(struct bpred_dir_t *pred_dir,	/* branch dir predictor inst */
 	switch (pred_dir->class) {
 		case BPredTage:
 			{		    
-				int tag_comp_tag[4];
-				pred_dir->config.tage.altTagComp=4;
-				pred_dir->config.tage.primeTagComp=4;
-				pred_dir->config.tage.folded_history_index[3].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)))^(pred_dir->config.tage.folded_history_index[3].folded_history);//^(pred_dir->config.tage.path_histoiry&7);
-				pred_dir->config.tage.folded_history_index[2].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)))^(pred_dir->config.tage.folded_history_index[2].folded_history);//^(pred_dir->config.tage.path_history&31);
-				pred_dir->config.tage.folded_history_index[1].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)))^(pred_dir->config.tage.folded_history_index[1].folded_history);//^(pred_dir->config.tage.path_history);
-				pred_dir->config.tage.folded_history_index[0].tag_comp_index=baddr^(baddr>>((int)log2(pred_dir->config.tage.t1size)))^(pred_dir->config.tage.folded_history_index[0].folded_history);//^(pred_dir->config.tage.path_history)^(pred_dir->config.tage.path_history >> ((int)log2(pred_dir->config.tage.t1size)));
-				for(int i=0;i<4;i++)
+				pred_dir->config.tage.altTagComp=NUMBEROFTAGTABLE;
+				pred_dir->config.tage.primeTagComp=NUMBEROFTAGTABLE;
+				struct tage temp_tage =pred_dir->config.tage;
+				for(int i=0;i<NUMBEROFTAGTABLE;i++)
 				{
-					pred_dir->config.tage.folded_history_index[i].tag_comp_index &=((1<<(int)log2(pred_dir->config.tage.t1size))-1);
+					temp_tage.tag_comp_index[i]=baddr^(baddr>>((int)log2(temp_tage.t1size)))^(temp_tage.folded_history_index[i].folded_history);
 				}
-				for(int i=0;i<4;i++)
+				for(int i=0;i<NUMBEROFTAGTABLE;i++)
 				{
-					tag_comp_tag[i]=baddr^(pred_dir->config.tage.folded_history_tag[0][i].folded_history)^(pred_dir->config.tage.folded_history_tag[1][i].folded_history<<1);
-					tag_comp_tag[i] &=((1<<pred_dir->config.tage.tag_size[i])-1);	
+					temp_tage.tag_comp_index[i] &=((1<<(int)log2(temp_tage.t1size))-1);
+
 				}
-				pred_dir->config.tage.tag_comp_tag=tag_comp_tag;
+				for(int i=0;i<NUMBEROFTAGTABLE;i++)
+				{
+					temp_tage.tag_comp_tag[i]=baddr^(temp_tage.folded_history_tag[0][i].folded_history)^(temp_tage.folded_history_tag[1][i].folded_history<<1);
+					temp_tage.tag_comp_tag[i]&=((1<<temp_tage.tag_size[i])-1);	
+				}
+				//pred_dir->config.tage.tag_comp_tag=tag_comp_tag;
 				//Base Prediction 
-				int base_pred_index =((((baddr) >> 19) ^ ((baddr) >> MD_BR_SHIFT)) & (4096-1));
+				int base_pred_index =((((baddr) >> 19) ^ ((baddr) >> MD_BR_SHIFT)) & (1024-1));
+
 				p=&(pred_dir->config.tage.bimod[base_pred_index].ctr);
-				pred_dir->config.tage.isBimodal=1;
+				temp_tage.isBimodal=1;
+				//fprintf(stderr,"Taking bimodal as prediction \n");
 				//Searching for matching tag starting from Tag Component 0
-				for(int i=0;i<4;i++)
+				for(int i=0;i<NUMBEROFTAGTABLE;i++)
 				{
-					if(pred_dir->config.tage.tag_comp_entry[i][pred_dir->config.tage.folded_history_index[i].tag_comp_index].tag==tag_comp_tag[i])
+					if(temp_tage.tag_comp_entry[i][temp_tage.tag_comp_index[i]].tag==temp_tage.tag_comp_tag[i])
 					{
-						pred_dir->config.tage.primeTagComp=i;
-				break;
-			}
-		}
-		for(int i=(pred_dir->config.tage.primeTagComp+1);i<4;i++)
+						temp_tage.primeTagComp=i;
+						//fprintf(stderr,"Get:Choosen primeTagCompTable is %d %d %d\n",i,pred_dir->config.tage.folded_history_index[i].tag_comp_index,pred_dir->config.tage.folded_history_index[i].tag_comp_tag);
+						//fprintf(stderr,"Get:Matching useful and ctr %d %d\n",pred_dir->config.tage.tag_comp_entry[i][pred_dir->config.tage.folded_history_index[i].tag_comp_index].useful_entry,pred_dir->config.tage.tag_comp_entry[i][pred_dir->config.tage.folded_history_index[i].tag_comp_index].ctr);
+						break;
+					}
+				}
+		for(int i=(temp_tage.primeTagComp+1);i<NUMBEROFTAGTABLE;i++)
 		{
-			if(pred_dir->config.tage.tag_comp_entry[i][pred_dir->config.tage.folded_history_index[i].tag_comp_index].tag==tag_comp_tag[i])
+			if(temp_tage.tag_comp_entry[i][temp_tage.tag_comp_index[i]].tag==temp_tage.tag_comp_tag[i])
 			{
-				pred_dir->config.tage.altTagComp=i;
+				temp_tage.altTagComp=i;
 				break;
 			}
 		}
 
-		if(pred_dir->config.tage.primeTagComp<4)
+		if(temp_tage.primeTagComp<NUMBEROFTAGTABLE)
 		{	
-			struct tag_comp_entry *temp_tag_comp_entry;
-			temp_tag_comp_entry=&(pred_dir->config.tage.tag_comp_entry[pred_dir->config.tage.primeTagComp][pred_dir->config.tage.folded_history_index[pred_dir->config.tage.primeTagComp].tag_comp_index]);
-			if(pred_dir->config.tage.altTagComp==4)
+			struct tag_comp_entry temp_tag_comp_entry;
+			temp_tag_comp_entry=temp_tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]];
+			if(temp_tage.altTagComp==NUMBEROFTAGTABLE)
 			{
-				pred_dir->config.tage.altPred=(*p>>1)&1;
+				temp_tage.altPred=(*p>>1)&1;
 			}
 			else
-			{	int alt_tag_table_index = pred_dir->config.tage.altTagComp;
-				int tag_index=pred_dir->config.tage.folded_history_index[alt_tag_table_index].tag_comp_index;
-				pred_dir->config.tage.isBimodal=0;
+			{	int alt_tag_table_index = temp_tage.altTagComp;
+				int tag_index=temp_tage.tag_comp_index[alt_tag_table_index];
+				temp_tage.isBimodal=0;
 				p=&(pred_dir->config.tage.tag_comp_entry[alt_tag_table_index][tag_index].ctr);
-				pred_dir->config.tage.altPred=(pred_dir->config.tage.tag_comp_entry[alt_tag_table_index][tag_index].ctr>>((int)ceil(log2(7))-1))&1;
+				temp_tage.altPred=(temp_tage.tag_comp_entry[alt_tag_table_index][tag_index].ctr>>((int)ceil(log(TAGCTRMAX))-1))&1;
 			}
-			if((*temp_tag_comp_entry).useful_entry!=0||(pred_dir->config.tage.use_alt_on_na<8))
+			if(temp_tag_comp_entry.useful_entry!=0)//||(temp_tage.use_alt_on_na<8))
 			{
-				pred_dir->config.tage.primePred=(((*temp_tag_comp_entry).ctr>>((int)ceil(log2(7))-1)))&1;
-				p=&((*temp_tag_comp_entry).ctr);
-				pred_dir->config.tage.isBimodal=0;	
+				temp_tage.primePred=temp_tag_comp_entry.ctr>>((int)ceil(log(TAGCTRMAX))-1)&1;
+				temp_tage.isBimodal=0;	
+				p=&(pred_dir->config.tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].ctr);
+				fprintf(stderr,"Inside the lookup checking for primePred null %d\n",*p);
+				//fprintf(stderr,"Prime prediction taken \n");
 			}	
 		}
 		else
-		{       pred_dir->config.tage.isBimodal=1;
-			pred_dir->config.tage.altPred=(*p>>1)&1;
+		{       temp_tage.isBimodal=1;
+			temp_tage.altPred=(*p>>1)&1;
 		}
+		pred_dir->config.tage=temp_tage;
+
 
 	break;
 	}
@@ -732,13 +747,18 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
 {
   struct bpred_btb_ent_t *pbtb = NULL;
   int index, i;
+//fprintf(stderr,"**********Start Lookup function**********\n");
+
 
   if (!dir_update_ptr)
     panic("no bpred update record");
 
   /* if this is not a branch, return not-taken */
   if (!(MD_OP_FLAGS(op) & F_CTRL))
+{//fprintf(stderr,"**********End Lookup function**********\n");
+  
     return 0;
+}
 
   pred->lookups++;
 
@@ -828,6 +848,8 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
 	                   % pred->retstack.size;
       pred->retstack_pops++;
       dir_update_ptr->dir.ras = TRUE; /* using RAS here */
+//fprintf(stderr,"**********End Lookup function**********\n");
+
       return target;
     }
 
@@ -872,7 +894,9 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
   /* if this is a jump, ignore predicted direction; we know it's taken. */
   if ((MD_OP_FLAGS(op) & (F_CTRL|F_UNCOND)) == (F_CTRL|F_UNCOND))
     {
-      return (pbtb ? pbtb->target : 1);
+      	//fprintf(stderr,"**********End Lookup function**********\n");
+	
+	    return (pbtb ? pbtb->target : 1);
     }
 
   /* otherwise we have a conditional branch */
@@ -881,28 +905,43 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
      if(pred->class==BPredTage)
 	{	if(!(!!pred->dirpred.tage->config.tage.isBimodal))
 		{
-			return((*(dir_update_ptr->pdir1)>=4)?1:0);
+			//fprintf(stderr,"**********End Lookup function**********\n");
+	//fprintf(stderr,"value of prediction(pbtb==NULL) is %d\n",((*(dir_update_ptr->pdir1)>=4?1:0)));
+
+
+			return((*(dir_update_ptr->pdir1)>=((TAGCTRMAX>>1)+1))
+					?1
+					:0);
 		}
 	} 
 	    
 	 /* BTB miss -- just return a predicted direction */
+//fprintf(stderr,"**********End Lookup function**********\n");
+	//fprintf(stderr,"value of prediction(pbtb==NULL) is %d\n",(*(dir_update_ptr->pdir1)));
+
       return ((*(dir_update_ptr->pdir1) >= 2)
 	      ? /* taken */ 1
 	      : /* not taken */ 0);
     }
   else
     {
-      /* BTB hit, so return target if it's a predicted-taken branch */
+      	//fprintf(stderr,"**********End Lookup function**********\n");
+
+	    /* BTB hit, so return target if it's a predicted-taken branch */
 	if(pred->class==BPredTage)
 	{	if(!(!!pred->dirpred.tage->config.tage.isBimodal))
 		{
-			return((*(dir_update_ptr->pdir1)>=4)?pbtb->target:0);
+			fprintf(stderr,"value of prediction is %d\n",((*(dir_update_ptr->pdir1)>=((TAGCTRMAX>>1)+1))?pbtb->target:0));
+			return((*(dir_update_ptr->pdir1)>=((TAGCTRMAX>>1)+1))?pbtb->target:0);
 		}
 	}
+	//fprintf(stderr,"value of prediction outside the the if is %d\n",(*(dir_update_ptr->pdir1))>=2);
+
       return ((*(dir_update_ptr->pdir1) >= 2)
 	      ? /* taken */ pbtb->target
 	      : /* not taken */ 0);
     }
+
 }
 
 /* Speculative execution can corrupt the ret-addr stack.  So for each
@@ -942,6 +981,8 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
   struct bpred_btb_ent_t *pbtb = NULL;
   struct bpred_btb_ent_t *lruhead = NULL, *lruitem = NULL;
   int index, i;
+  //fprintf(stderr,"**********Start update function**********\n");
+//fprintf(stderr,"Inside the update of Tage the value of pred_taken is %d and the final outcome is %d \n",pred_taken,taken);
 
   /* don't change bpred state for non-branch instructions or if this
    * is a stateless predictor*/
@@ -1029,19 +1070,7 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 	      pred->dirpred.twolev->config.two.shiftregs[l1index] =
 		shift_reg & ((1 << pred->dirpred.twolev->config.two.shift_width) - 1);
     }
-    if(((MD_OP_FLAGS(op) & (F_CTRL|F_UNCOND)) == (F_CTRL|F_UNCOND)) && (pred->class==BPredTage))
-    {
-	if(pred->class == BPredTage)
-	{
-		for(int i=pred->dirpred.tage->config.tage.geometric_lengths[0];i>=1;i--)
-	{
-		pred->dirpred.tage->config.tage.geometric_history[i] =pred->dirpred.tage->config.tage.geometric_history[i-1];
-	}
-		pred->dirpred.tage->config.tage.geometric_history[0]=1;
-		
-	}
-    }
-
+    
 
   /* find BTB entry if it's a taken branch (don't allocate for non-taken) */
   if (taken)
@@ -1117,219 +1146,288 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
   /* update state (but not for jumps) */
   if (dir_update_ptr->pdir1)
     {
-      if(pred->class==BPredTage)	
-      {
-	if(pred->dirpred.tage->config.tage.primeTagComp < 4)
-	{
-		if((!!pred_taken)!=(!!pred->dirpred.tage->config.tage.altPred))
+     //	int choosen_tag_table =1; 
+    
+	if(pred->class==BPredTage)	
+      	{
+	      struct tage temp_tage=pred->dirpred.tage->config.tage;
+		
+
+		if(temp_tage.primeTagComp < NUMBEROFTAGTABLE)
 		{
-			if(pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].useful_entry!=0 || pred->dirpred.tage->config.tage.use_alt_on_na<8)
+			if((!!pred_taken)!=(!!temp_tage.altPred))
 			{
-				if((!!pred_taken)==(!!taken))
+				/**
+				 *If the altPredictor's prediction is not the same as the outcome and the prediction was given by Prime predictor, change the useful_entry bit accordingly.
+				 **/
+				
+					if((!!pred_taken)==(!!taken))
+					{
+						if (temp_tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].useful_entry < TAGUSEFULMAX)
+							++pred->dirpred.tage->config.tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].useful_entry;
+					}
+					else
+					{
+						if (temp_tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].useful_entry> 0)
+							--pred->dirpred.tage->config.tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].useful_entry;
+					}
+			}
+			else if((!!pred_taken)!=(temp_tage.primePred))
+			{
+				if((!!taken)==(!!temp_tage.primePred))
 				{
-					if (*dir_update_ptr->pdir1 < 3)
-						++pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].useful_entry;
+					if (temp_tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].useful_entry < TAGUSEFULMAX)
+							++pred->dirpred.tage->config.tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].useful_entry;
+
+				}
+			}
+			
+			if(taken)
+			{
+				if(temp_tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].ctr <TAGCTRMAX)
+				{
+					++pred->dirpred.tage->config.tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].ctr;
+				}
+			}
+			else
+			{
+				if(temp_tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].ctr > 0)
+				{
+					--pred->dirpred.tage->config.tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].ctr;
+				}
+			}
+			temp_tage=pred->dirpred.tage->config.tage;
+		
+			if((temp_tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].useful_entry==0)&&((temp_tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].ctr==(TAGCTRMAX>>1))||(temp_tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].ctr==((TAGCTRMAX>>1)+1))))
+			  {
+					if((!!temp_tage.primePred) !=(!!temp_tage.altPred))
+					{
+						if((!!(temp_tage.altPred)) ==(!!taken))
+						{
+							if(temp_tage.use_alt_on_na < 15)
+							{
+								pred->dirpred.tage->config.tage.use_alt_on_na++;
+							}
+						}
+						else if(temp_tage.use_alt_on_na > 0)
+						{
+							pred->dirpred.tage->config.tage.use_alt_on_na --;
+						}
+					}
+
+			     }
+			temp_tage=pred->dirpred.tage->config.tage;
+			/*if(((!!temp_tage.primePred)==(!!taken)) &&(temp_tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].useful_entry>=2)&&(temp_tage.primeTagComp-1>=0))
+			{
+				pred->dirpred.tage->config.tage.tag_comp_entry[temp_tage.primeTagComp-1][temp_tage.tag_comp_index[temp_tage.primeTagComp-1]].tag=temp_tage.tag_comp_tag[temp_tage.primeTagComp-1];
+				pred->dirpred.tage->config.tage.tag_comp_entry[temp_tage.primeTagComp-1][temp_tage.tag_comp_index[temp_tage.primeTagComp-1]].useful_entry=0;
+				pred->dirpred.tage->config.tage.tag_comp_entry[temp_tage.primeTagComp-1][temp_tage.tag_comp_index[temp_tage.primeTagComp-1]].ctr=((temp_tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].ctr>=4)?4:3);
+
+			}*/
+			temp_tage=pred->dirpred.tage->config.tage;
+		  }
+		 else
+		 {
+			//fprintf(stderr,"Bimodal update\n");
+			 if (taken)
+				{
+				  if (*dir_update_ptr->pdir1 < BASECTRMAX)
+				    ++*dir_update_ptr->pdir1;
+				}
+			      else
+				{ /* not taken */
+				  if (*dir_update_ptr->pdir1 > 0)
+				    --*dir_update_ptr->pdir1;
+				}
+		 }
+		 /**
+		  *If the prediction was incorrect, allocate a new entry with a long history table if there is space available in the tag table, else decrement the useful_entry counter of all the table after primary tag predictor table.
+		  **/
+		 if(((!!pred_taken)!=(!!taken))&&(temp_tage.primeTagComp>0 ))
+		 {
+			unsigned char isPredEntryCountZero=0;
+			for(int i=(temp_tage.primeTagComp-1);i>=0;i--)
+			{
+				if(temp_tage.tag_comp_entry[i][temp_tage.tag_comp_index[i]].useful_entry==0)
+				{
+					isPredEntryCountZero=1;
+					break;
+				}
+			}
+			if(!isPredEntryCountZero)
+			{
+				for(int i=(temp_tage.primeTagComp-1);i>=0;i--)
+				{
+					//if(pred->dirpred.tage->config.tage.tag_comp_entry[i][pred->dirpred.tage->config.tage.folded_history_index[i].tag_comp_index].useful_entry>0)	
+					pred->dirpred.tage->config.tage.tag_comp_entry[i][temp_tage.tag_comp_index[i]].useful_entry--;
+				}
+			}
+			else
+			{
+				srand(time(NULL));
+				int randomNumber = rand()%100;
+				int numberOfZeroUsefulEntry=0;
+				int choosen_tag_table=0;
+				for(int i=(temp_tage.primeTagComp-1);i>=0;i--)
+				{
+					if(temp_tage.tag_comp_entry[i][temp_tage.tag_comp_index[i]].useful_entry == 0)
+
+					{
+						numberOfZeroUsefulEntry++;
+						if(numberOfZeroUsefulEntry == 1)
+						{
+							choosen_tag_table=i;
+						}
+						else if(numberOfZeroUsefulEntry >1)
+						{
+								if(numberOfZeroUsefulEntry == 2)
+								{
+									choosen_tag_table = i+1;
+								}
+								else
+								{
+										choosen_tag_table=i+2;
+									}
+								}
+						}
+					}
+				if(taken)
+				{
+					pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][temp_tage.tag_comp_index[choosen_tag_table]].ctr=((TAGCTRMAX>>1)+1);
+
 				}
 				else
 				{
-					if (*dir_update_ptr->pdir1 > 0)
-						--pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].useful_entry;
+					pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][temp_tage.tag_comp_index[choosen_tag_table]].ctr=(TAGCTRMAX>>1);
 				}
+				//fprintf(stderr,"new entry counter is  %d \n",pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index].ctr);
+
+				pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][temp_tage.tag_comp_index[choosen_tag_table]].tag=temp_tage.tag_comp_tag[choosen_tag_table];
+				pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][temp_tage.tag_comp_index[choosen_tag_table]].useful_entry=0;
+				//fprintf(stderr,"Update new_entry :Choosen primeTagCompTable is %d %d %d %d\n",choosen_tag_table,pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index,pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_tag,pred->dirpred.tage->config.tage.tag_size[0]);
+	//			//fprintf(stderr,"Update new_entry : %d %d\n",pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index].useful_entry,pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index].ctr);
+
+
 			}
-		}
-		if(pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].useful_entry==0 && pred->dirpred.tage->config.tage.use_alt_on_na>=8)
+		 }
+		 temp_tage=pred->dirpred.tage->config.tage;
+		 pred->dirpred.tage->config.tage.clock++;
+		if(pred->dirpred.tage->config.tage.clock == (256*1024))
 		{
-			if(taken)
+			pred->dirpred.tage->config.tage.clock=0;
+			if(temp_tage.clock_flip==1)
 			{
-				if(pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].ctr > 7)
+					pred->dirpred.tage->config.tage.clock_flip=0;
+			}
+			else
+			{
+					pred->dirpred.tage->config.tage.clock_flip=1;
+			}
+			if(temp_tage.clock_flip==1)
+			{
+				
+				for(int i=0;i<NUMBEROFTAGTABLE;i++)
 				{
-					++pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].ctr;
+					for(int j=0;j<temp_tage.t1size;j++)
+					{
+						pred->dirpred.tage->config.tage.tag_comp_entry[i][j].useful_entry&=1;
+					}
 				}
 			}
 			else
 			{
-				if(pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].ctr < 0)
+				for(int i=0;i<NUMBEROFTAGTABLE;i++)
 				{
-					--pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].ctr;
-
-				}
-			}
-	
-		}
-		if (taken)
-		{
-		  if (*dir_update_ptr->pdir1 < 7)
-		    ++*dir_update_ptr->pdir1;
-		}
-	      else
-		{ /* not taken */
-		  if (*dir_update_ptr->pdir1 > 0)
-		    --*dir_update_ptr->pdir1;
-		}
-		if((pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].useful_entry==0)&&((pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].ctr==3)||(pred->dirpred.tage->config.tage.tag_comp_entry[pred->dirpred.tage->config.tage.primeTagComp][pred->dirpred.tage->config.tage.folded_history_index[pred->dirpred.tage->config.tage.primeTagComp].tag_comp_index].ctr==4)))
-			      {
-				if((!!pred->dirpred.tage->config.tage.primePred) !=(!!pred->dirpred.tage->config.tage.altPred))
-				{
-					if((!!(pred->dirpred.tage->config.tage.altPred)) ==(!!taken))
+					for(int j=0;j<temp_tage.t1size;j++)
 					{
-						if(pred->dirpred.tage->config.tage.use_alt_on_na < 15)
-						{
-							pred->dirpred.tage->config.tage.use_alt_on_na++;
-						}
-					}
-					else if(pred->dirpred.tage->config.tage.use_alt_on_na > 0)
-					{
-						pred->dirpred.tage->config.tage.use_alt_on_na --;
+						pred->dirpred.tage->config.tage.tag_comp_entry[i][j].useful_entry&=2;
 					}
 				}
-
-	      		     }
-	  }
-	 else
-	 {
-		if (taken)
-			{
-			  if (*dir_update_ptr->pdir1 < 3)
-			    ++*dir_update_ptr->pdir1;
-			}
-		      else
-			{ /* not taken */
-			  if (*dir_update_ptr->pdir1 > 0)
-			    --*dir_update_ptr->pdir1;
-			}
-	 }
-	 if(((!!pred_taken)!=(!!taken))&&(pred->dirpred.tage->config.tage.primeTagComp>0 ))
-	 {
-		unsigned char isPredEntryCountZero=0;
-		for(int i=(pred->dirpred.tage->config.tage.primeTagComp-1);i>=0;i--)
-		{
-			if(pred->dirpred.tage->config.tage.tag_comp_entry[i][pred->dirpred.tage->config.tage.folded_history_index[i].tag_comp_index].useful_entry==0)
-			{
-				isPredEntryCountZero=1;
-				break;
 			}
 		}
-		if(!isPredEntryCountZero)
+		temp_tage=pred->dirpred.tage->config.tage;
+		for(int i=temp_tage.geometric_lengths[0];i>=1;i--)
 		{
-			for(int i=(pred->dirpred.tage->config.tage.primeTagComp-1);i>=0;i--)
-			{
-				if(pred->dirpred.tage->config.tage.tag_comp_entry[i][pred->dirpred.tage->config.tage.folded_history_index[i].tag_comp_index].useful_entry>0)	
-					pred->dirpred.tage->config.tage.tag_comp_entry[i][pred->dirpred.tage->config.tage.folded_history_index[i].tag_comp_index].useful_entry--;
-			}
+			pred->dirpred.tage->config.tage.geometric_history[i] =temp_tage.geometric_history[i-1];
+		}
+		if(taken)
+		{
+			pred->dirpred.tage->config.tage.geometric_history[0]=1;
 		}
 		else
 		{
-			srand(time(NULL));
-			int randomNumber = rand()%100;
-			int numberOfZeroUsefulEntry=0;
-			int choosen_tag_table=0;
-			for(int i=(pred->dirpred.tage->config.tage.primeTagComp-1);i>=0;i--)
-			{
-				if(pred->dirpred.tage->config.tage.tag_comp_entry[i][pred->dirpred.tage->config.tage.folded_history_index[i].tag_comp_index].useful_entry == 0)
-
-				{
-					numberOfZeroUsefulEntry++;
-					if(numberOfZeroUsefulEntry == 1)
-					{
-						choosen_tag_table=i;
-					}
-					else if(numberOfZeroUsefulEntry >1)
-					{
-						if(randomNumber<=33)
-						{
-							if(numberOfZeroUsefulEntry == 2)
-							{
-								choosen_tag_table = i;
-							}
-							else
-							{
-								randomNumber = rand()%100;
-								if(randomNumber<=33)
-								{
-									choosen_tag_table=i;
-								}
-							}
-						}
-						break;
-					}
-				}
-			}
-			if(taken)
-			{
-				pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index].ctr=4;
-			}
-			else
-			{
-				pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index].ctr=3;
-			}
-			pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index].tag=pred->dirpred.tage->config.tage.tag_comp_tag[choosen_tag_table];
-			pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index].useful_entry=0;
+			pred->dirpred.tage->config.tage.geometric_history[0]=0;
 		}
-	 }
-	pred->dirpred.tage->config.tage.clock++;
-	if(pred->dirpred.tage->config.tage.clock == (256*1024))
-	{
-		pred->dirpred.tage->config.tage.clock=0;
-		if(pred->dirpred.tage->config.tage.clock_flip==1)
+		//fprintf(stderr,"The geometric history is \n");
+		for(int i=0;i<40;i++)
 		{
-				pred->dirpred.tage->config.tage.clock_flip=0;
+			//fprintf(stderr,"%d ",pred->dirpred.tage->config.tage.geometric_history[i]);
 		}
-		else
+		temp_tage=pred->dirpred.tage->config.tage;
+		for(int i=0;i<NUMBEROFTAGTABLE;i++)
 		{
-				pred->dirpred.tage->config.tage.clock_flip=1;
-		}
-		if(pred->dirpred.tage->config.tage.clock_flip==1)
-		{
+			////fprintf(stderr,"The folding length is %d\n",pred->dirpred.tage->config.tage.folded_history_index[i].folded_length
 			
-			for(int i=0;i<4;i++)
+			if(temp_tage.geometric_lengths[i]<(((int)log2(temp_tage.t1size))))
 			{
-				for(int j=0;j<pred->dirpred.tage->config.tage.t1size;j++)
+				temp_tage.folded_history_index[i].folded_history=0;
+				for(int j=(temp_tage.folded_history_tag[0][i].folded_length-1);j>=0;j--)
 				{
-					pred->dirpred.tage->config.tage.tag_comp_entry[i][j].useful_entry&=1;
+					temp_tage.folded_history_index[i].folded_history^=temp_tage.geometric_history[j]<<j;
 				}
+				for(int j=(temp_tage.folded_history_tag[1][i].folded_length-1);j>=0;j--)
+				{
+					temp_tage.folded_history_index[i].folded_history^=temp_tage.geometric_history[j]<<j;
+				}
+				temp_tage.folded_history_index[i].folded_history &=((1<<temp_tage.folded_history_tag[0][i].folded_length)-1);
+				pred->dirpred.tage->config.tage.folded_history_index[i]=temp_tage.folded_history_index[i];
 			}
+			else
+			{
+				pred->dirpred.tage->config.tage.folded_history_index[i].folded_history =(temp_tage.folded_history_index[i].folded_history<<1)^( temp_tage.folded_history_index[i].folded_history>>(temp_tage.folded_history_index[i].folded_length-1))^(temp_tage.geometric_history[0]);
+				pred->dirpred.tage->config.tage.folded_history_index[i].folded_history^=temp_tage.geometric_history[temp_tage.geometric_lengths[i]]<<(temp_tage.geometric_lengths[i]%temp_tage.folded_history_index[i].folded_length);
+				pred->dirpred.tage->config.tage.folded_history_index[i].folded_history&=((1<<temp_tage.folded_history_index[i].folded_length)-1);
+			}
+
+			if(temp_tage.geometric_lengths[i]<temp_tage.tag_size[i])
+			{
+				temp_tage.folded_history_tag[0][i].folded_history=0;
+				temp_tage.folded_history_tag[1][i].folded_history=0;
+				for(int j=(temp_tage.folded_history_tag[0][i].folded_length-1);j>=0;j--)
+				{
+					temp_tage.folded_history_tag[0][i].folded_history^=temp_tage.geometric_history[j]<<j;
+				}
+				for(int j=(temp_tage.folded_history_tag[1][i].folded_length-1);j>=0;j--)
+				{
+					temp_tage.folded_history_tag[1][i].folded_history^=temp_tage.geometric_history[j]<<j;
+				}
+				temp_tage.folded_history_tag[0][i].folded_history &=((1<<temp_tage.folded_history_tag[0][i].folded_length)-1);
+				temp_tage.folded_history_tag[1][i].folded_history &=((1<<temp_tage.folded_history_tag[0][i].folded_length)-1);
+				pred->dirpred.tage->config.tage.folded_history_tag[0][i]=temp_tage.folded_history_tag[0][i];
+				pred->dirpred.tage->config.tage.folded_history_tag[1][i]=temp_tage.folded_history_tag[1][i];
+
+			}
+			else
+			{
+				pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history =(temp_tage.folded_history_tag[0][i].folded_history<<1)^( temp_tage.folded_history_tag[0][i].folded_history>>(temp_tage.folded_history_tag[0][i].folded_length-1))^(temp_tage.geometric_history[0]);
+				pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history^=temp_tage.geometric_history[temp_tage.geometric_lengths[i]]<<(temp_tage.geometric_lengths[i]%temp_tage.folded_history_tag[0][i].folded_length);
+				pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history&=((1<<temp_tage.folded_history_tag[0][i].folded_length)-1);
+				fprintf(stderr,"The folded history of table %d tag1 is %d \n",i,pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history);
+
+				pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history =(temp_tage.folded_history_tag[1][i].folded_history<<1)^( temp_tage.folded_history_tag[1][i].folded_history>>(temp_tage.folded_history_tag[1][i].folded_length-1))^(temp_tage.geometric_history[0]);
+				pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history^=temp_tage.geometric_history[temp_tage.geometric_lengths[i]]<<(temp_tage.geometric_lengths[i]%temp_tage.folded_history_tag[1][i].folded_length);
+				pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history&=((1<<temp_tage.folded_history_tag[1][i].folded_length)-1);
+				fprintf(stderr,"The folded history of table %d tag2 is %d \n",i,pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history);
+
+
 		}
-		else
+		}
+		pred->dirpred.tage->config.tage.path_history = temp_tage.path_history<<1;
+		if(baddr&1)
 		{
-			for(int i=0;i<4;i++)
-			{
-				for(int j=0;j<pred->dirpred.tage->config.tage.t1size;j++)
-				{
-					pred->dirpred.tage->config.tage.tag_comp_entry[i][j].useful_entry&=2;
-				}
-			}
+			pred->dirpred.tage->config.tage.path_history=pred->dirpred.tage->config.tage.path_history+1;
 		}
-	}
-	for(int i=pred->dirpred.tage->config.tage.geometric_lengths[0];i>=1;i--)
-	{
-		pred->dirpred.tage->config.tage.geometric_history[i] =pred->dirpred.tage->config.tage.geometric_history[i-1];
-	}
-	if(taken)
-	{
-		pred->dirpred.tage->config.tage.geometric_history[0]=1;
-	}
-	else
-	{
-		pred->dirpred.tage->config.tage.geometric_history[0]=0;
-	}
-	for(int i=0;i<4;i++)
-	{
-		pred->dirpred.tage->config.tage.folded_history_index[i].folded_history =(pred->dirpred.tage->config.tage.folded_history_index[i].folded_history<<1)^( pred->dirpred.tage->config.tage.folded_history_index[i].folded_history>>(pred->dirpred.tage->config.tage.folded_history_index[i].folded_length-1))^(pred->dirpred.tage->config.tage.geometric_history[0]);
-		pred->dirpred.tage->config.tage.folded_history_index[i].folded_history^=pred->dirpred.tage->config.tage.geometric_history[pred->dirpred.tage->config.tage.geometric_lengths[i]]<<(pred->dirpred.tage->config.tage.geometric_lengths[i]%pred->dirpred.tage->config.tage.folded_history_index[i].folded_length);
-		pred->dirpred.tage->config.tage.folded_history_index[i].folded_history&=((1<<pred->dirpred.tage->config.tage.folded_history_index[i].folded_length)-1);
-		pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history =(pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history<<1)^( pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history>>(pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_length-1))^(pred->dirpred.tage->config.tage.geometric_history[0]);
-	     	pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history^=pred->dirpred.tage->config.tage.geometric_history[pred->dirpred.tage->config.tage.geometric_lengths[i]]<<(pred->dirpred.tage->config.tage.geometric_lengths[i]%pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_length);
-		pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_history&=((1<<pred->dirpred.tage->config.tage.folded_history_tag[0][i].folded_length)-1);
-		pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history =(pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history<<1)^( pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history>>(pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_length-1))^(pred->dirpred.tage->config.tage.geometric_history[0]);
-	     	pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history^=pred->dirpred.tage->config.tage.geometric_history[pred->dirpred.tage->config.tage.geometric_lengths[i]]<<(pred->dirpred.tage->config.tage.geometric_lengths[i]%pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_length);
-		pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history&=((1<<pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_length)-1);
-		pred->dirpred.tage->config.tage.path_history = pred->dirpred.tage->config.tage.path_history<<1;
-	}
-	if(baddr&1)
-	{
-		pred->dirpred.tage->config.tage.path_history=pred->dirpred.tage->config.tage.path_history+1;
-	}
-	pred->dirpred.tage->config.tage.path_history=(pred->dirpred.tage->config.tage.path_history&((1<<16)-1));
+		pred->dirpred.tage->config.tage.path_history=(pred->dirpred.tage->config.tage.path_history&((1<<16)-1));
       }
       else
       {
@@ -1402,4 +1500,6 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 	  pbtb->target = btarget;
 	}
     }
+//fprintf(stderr,"**********End update function**********\n\n\n");
+
 }

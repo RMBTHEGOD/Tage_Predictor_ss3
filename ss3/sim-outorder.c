@@ -116,7 +116,7 @@ static char *pred_type;
 /* bimodal predictor config (<table_size>) */
 static int bimod_nelt = 1;
 static int bimod_config[1] =
-  { /* bimod tbl size */4096 };
+  { /* bimod tbl size */2048 };
 
 /* 2-level predictor config (<l1size> <l2size> <hist_size> <xor>) */
 static int twolev_nelt = 4;

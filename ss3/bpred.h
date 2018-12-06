@@ -60,7 +60,10 @@
 #include "misc.h"
 #include "machine.h"
 #include "stats.h"
-
+#define NUMBEROFTAGTABLE 4
+#define BASECTRMAX 3
+#define TAGCTRMAX  3
+#define TAGUSEFULMAX 1
 /*
  * This module implements a number of branch predictor mechanisms.  The
  * following predictors are supported:
@@ -112,16 +115,14 @@ enum bpred_class {
 struct tag_comp_entry
 {
 	unsigned char ctr;
-	int tag;
-	int useful_entry;
+	unsigned int tag;
+	unsigned int useful_entry;
 };
 
 struct folded_history
 {
 	int folded_history;
 	int folded_length;
-	int geometric_length;
-	int tag_comp_index;
 };
 
 struct bimod_predictor
@@ -129,6 +130,35 @@ struct bimod_predictor
 	unsigned char ctr;
 	int hys;
 };
+
+struct tage
+{
+	unsigned int size;
+	unsigned char *table;
+	int t1size;
+	int t2size;
+	int t3size;
+	int t4size;
+	int clock;
+	unsigned char clock_flip;
+	unsigned char primePred;
+	unsigned char altPred;
+	int primeTagComp;
+	int altTagComp;	
+	struct tag_comp_entry *tag_comp_entry[4];
+	struct folded_history *folded_history_index;
+	struct folded_history *folded_history_tag[2];
+	int use_alt_on_na;
+	int path_history;
+	int *geometric_history;
+	int *geometric_lengths;
+	int *tag_size;
+	int *tag_comp_index;
+	unsigned int *tag_comp_tag;
+	unsigned int isBimodal;
+	struct bimod_predictor *bimod;
+    };
+
 
 /* an entry in a BTB */
 struct bpred_btb_ent_t {
@@ -154,30 +184,8 @@ struct bpred_dir_t {
       int *shiftregs;		/* level-1 history table */
       unsigned char *l2table;	/* level-2 prediction state table */
     } two;
-    struct {
-	int t1size;
-	int t2size;
-	int t3size;
-	int t4size;
-	int clock;
-	unsigned char clock_flip;
-	unsigned char primePred;
-	unsigned char altPred;
-	int primeTagComp;
-	int altTagComp;	
-	struct tag_comp_entry *tag_comp_entry[4];
-	struct folded_history *folded_history_index;
-	struct folded_history *folded_history_tag[2];
-	int use_alt_on_na;
-	int path_history;
-	int *geometric_history;
-	int *geometric_lengths;
-	int *tag_size;
-	int *tag_comp_tag;
-	unsigned char isBimodal;
-	struct bimod_predictor *bimod;
-    }tage;
-  } config;
+    struct tage tage;
+      } config;
 };
 
 /* branch predictor def */

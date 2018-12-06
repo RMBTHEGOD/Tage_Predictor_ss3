@@ -8,7 +8,7 @@ for bench_mark_name in bench_mark_names:
     with open("stats/mispredict_stats.txt","a+") as stats:
             stats.write(bench_mark_name+"\n");
     for temp_branch_pred in branch_pred:
-        cmd =  './Run.pl -db ./bench.db -dir results/gcc1 -benchmark '+bench_mark_name+' -sim /home/rmb/ACA1/simulator/ss3/sim-outorder -args \"-fastfwd 5000000 -max:inst 1000000 -bpred '+temp_branch_pred+'\" >& results/'+bench_mark_name+temp_branch_pred+'.out'
+        cmd =  './Run.pl -db ./bench.db -dir results/gcc1 -benchmark '+bench_mark_name+' -sim /home/rmb/ACA1/simulator/ss3/sim-outorder -args \"-fastfwd 1000000 -max:inst 1000000 -bpred '+temp_branch_pred+'\" >& results/'+bench_mark_name+temp_branch_pred+'.out'
         print cmd
         subprocess.call(cmd,shell=True)
         with open('results/'+bench_mark_name+temp_branch_pred+'.out',"r") as contents:
