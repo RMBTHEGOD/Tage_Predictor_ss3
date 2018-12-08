@@ -101,10 +101,11 @@ bpred_create(enum bpred_class class,	/* type of predictor to create */
 
   case BPredTage:
     pred->dirpred.tage = bpred_dir_create(class, /*T1 Size*/l1size, /*T2 Size*/l2size, /*T3 Size*/shift_width,/*T4 Size*/xor);
-    if(!(pred->dirpred.tage->config.tage.bimod=calloc(4096,sizeof(struct bimod_predictor))))
+    if(!(pred->dirpred.tage->config.tage.bimod=calloc(bimod_size,sizeof(struct bimod_predictor))))
     {
 	    fatal("Cannot allocated memory for bimodal predictor");
     }
+    pred->dirpred.tage->config.tage.size=bimod_size;
     break;
   case BPred2Level:
     pred->dirpred.twolev = 
@@ -240,10 +241,10 @@ bpred_dir_create (
 			{
 				fatal("cannot allocate geometric_lengths ");
 			}
-			pred_dir->config.tage.tag_size[0]=9;
-			pred_dir->config.tage.tag_size[1]=9;
-			pred_dir->config.tage.tag_size[2]=9;
-			pred_dir->config.tage.tag_size[3]=9;
+			pred_dir->config.tage.tag_size[0]=TAG0;
+			pred_dir->config.tage.tag_size[1]=TAG1;
+			pred_dir->config.tage.tag_size[2]=TAG2;
+			pred_dir->config.tage.tag_size[3]=TAG3;
 			for(int i=0;i<NUMBEROFTAGTABLE;i++)
 			{
 				if(!(pred_dir->config.tage.tag_comp_entry[i]=calloc(l1size,sizeof(struct tag_comp_entry))))
@@ -276,7 +277,6 @@ bpred_dir_create (
 			{
 				fatal("cannot allocate geometric_lengths ");
 			}
-			pred_dir->config.tage.path_history=0;
 			if(!(pred_dir->config.tage.tag_comp_index=calloc(NUMBEROFTAGTABLE,sizeof(int))))
 			{
 				fatal("cannot allocate tag_comp_index");
@@ -619,7 +619,7 @@ bpred_dir_lookup(struct bpred_dir_t *pred_dir,	/* branch dir predictor inst */
 					temp_tage.tag_comp_tag[i]&=((1<<temp_tage.tag_size[i])-1);	
 				}
 				//Base Prediction 
-				int base_pred_index =((((baddr) >> 19) ^ ((baddr) >> MD_BR_SHIFT)) & (4096-1));
+				int base_pred_index =((((baddr) >> 19) ^ ((baddr) >> MD_BR_SHIFT)) & (temp_tage.size-1));
 				p=&(pred_dir->config.tage.bimod[base_pred_index].ctr);
 				temp_tage.isBimodal=1;
 				for(int i=0;i<NUMBEROFTAGTABLE;i++)

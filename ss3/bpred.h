@@ -60,15 +60,18 @@
 #include "misc.h"
 #include "machine.h"
 #include "stats.h"
-#define NUMBEROFTAGTABLE 4
-#define BASECTRMAX 3
-#define TAGCTRMAX  3
-#define TAGUSEFULMAX 3
-#define GEOMETRICLENGTH0 128
-#define	GEOMETRICLENGTH1 64
-#define GEOMETRICLENGTH2 32
-#define GEOMETRICLENGTH3 16
-
+#define NUMBEROFTAGTABLE 4	//Number of tag tables in tage predictor
+#define BASECTRMAX 3		//Maximum value of base counter
+#define TAGCTRMAX  3		//Maximum value of tag counter
+#define TAGUSEFULMAX 3		//Maximum value of useful_entry counter
+#define GEOMETRICLENGTH0 128	//Size of global history collected and size of geometric history of last table in Tag predictor
+#define	GEOMETRICLENGTH1 64	//Size of geometric history of last table -1 
+#define GEOMETRICLENGTH2 32	//Size of geometric history of last table -2
+#define GEOMETRICLENGTH3 16	//Size of geometric history of last table -3
+#define TAG0 8			//Size of tag in last table entries
+#define	TAG1 8			//Size of tag in last table -1 entries
+#define TAG2 8			//Size of tag in last table -2 entries
+#define TAG3 8			//Size of tag in last table -3 entries
 /*
  * This module implements a number of branch predictor mechanisms.  The
  * following predictors are supported:
@@ -110,13 +113,16 @@
 enum bpred_class {
   BPredComb,                    /* combined predictor (McFarling) */
   BPred2Level,			/* 2-level correlating pred w/2-bit counters */
-  BPredTage,
+  BPredTage,			/* Base predictor(2 bit counter) with 4 tag predictor(2/3 bit counter)*/
   BPred2bit,			/* 2-bit saturating cntr pred (dir mapped) */
   BPredTaken,			/* static predict taken */
   BPredNotTaken,		/* static predict not taken */
   BPred_NUM
   };
 
+/**
+ *This is the structure of tag table entry
+ **/
 struct tag_comp_entry
 {
 	unsigned char ctr;
@@ -124,44 +130,50 @@ struct tag_comp_entry
 	unsigned int useful_entry;
 };
 
+/**
+ *This is the structure of folded_history(CSR).
+ **/
 struct folded_history
 {
 	int folded_history;
 	int folded_length;
 };
 
+/**
+ *This is the structure of our Base predictor which is a bimod predictor.
+ **/
 struct bimod_predictor
 {
 	unsigned char ctr;
 	int hys;
 };
 
+/**
+ *This is the overall structure of the Tage predictor
+ **/
 struct tage
 {
-	unsigned int size;
-	unsigned char *table;
-	int t1size;
-	int t2size;
-	int t3size;
-	int t4size;
-	int clock;
-	unsigned char clock_flip;
-	unsigned char primePred;
-	unsigned char altPred;
-	int primeTagComp;
-	int altTagComp;	
-	struct tag_comp_entry *tag_comp_entry[4];
-	struct folded_history *folded_history_index;
-	struct folded_history *folded_history_tag[2];
-	int use_alt_on_na;
-	int path_history;
-	int *geometric_history;
-	int *geometric_lengths;
-	int *tag_size;
-	int *tag_comp_index;
-	unsigned int *tag_comp_tag;
-	unsigned int isBimodal;
-	struct bimod_predictor *bimod;
+	unsigned int size;						//Size of Base predictor.
+	int t1size;							//Size of 1st table(last table -3).
+	int t2size;							//Size of 2nd table(last table -2).
+	int t3size;							//Size of 3rd table(last table -1).
+	int t4size;							//Size of 4th table(last table).
+	int clock;							//Clock used to keep track of whether 256K branches are completed
+	unsigned char clock_flip;					//To flip the useful_entries(MSB or LSB) of tag table after 256K branches.
+	unsigned char primePred;					//Holds the primary predictor's value.
+	unsigned char altPred;						//Holds the prediction of alternate predictor.
+	int primeTagComp;						//Primary predictor table number.
+	int altTagComp;							//Alternate predictor table number.
+	struct tag_comp_entry *tag_comp_entry[4];			
+	struct folded_history *folded_history_index;			//Holds the folded_history to calculate the index of the tag table.
+	struct folded_history *folded_history_tag[2];			//Holds the folded_histories(CSR1 and CSR2) to calculate the tag of an entry of tag table.
+	int *geometric_history;						//Holds the global histories of the branches.
+	int *geometric_lengths;						//Holds the length of geometric history of each tag table.
+	int *tag_size;							//Holds the tag size of each tag table.
+	int *tag_comp_index;						//Holds the computed index of each tag table.
+	unsigned int *tag_comp_tag;					//Holds the computed tag of each tag table.
+	unsigned int isBimodal;						//sets if the prediction is given by base predictor(Bimod)
+	struct bimod_predictor *bimod;					//Reference of the base prediction table.
     };
 
 
