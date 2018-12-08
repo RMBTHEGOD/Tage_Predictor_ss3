@@ -101,7 +101,7 @@ bpred_create(enum bpred_class class,	/* type of predictor to create */
 
   case BPredTage:
     pred->dirpred.tage = bpred_dir_create(class, /*T1 Size*/l1size, /*T2 Size*/l2size, /*T3 Size*/shift_width,/*T4 Size*/xor);
-    if(!(pred->dirpred.tage->config.tage.bimod=calloc(1024,sizeof(struct bimod_predictor))))
+    if(!(pred->dirpred.tage->config.tage.bimod=calloc(4096,sizeof(struct bimod_predictor))))
     {
 	    fatal("Cannot allocated memory for bimodal predictor");
     }
@@ -232,18 +232,18 @@ bpred_dir_create (
 			{
 				fatal("cannot allocate geometric_lengths ");
 			}
-			pred_dir->config.tage.geometric_lengths[0]=128;
-			pred_dir->config.tage.geometric_lengths[1]=64;
-			pred_dir->config.tage.geometric_lengths[2]=32;
-			pred_dir->config.tage.geometric_lengths[3]=16;
+			pred_dir->config.tage.geometric_lengths[0]=GEOMETRICLENGTH0;
+			pred_dir->config.tage.geometric_lengths[1]=GEOMETRICLENGTH1;
+			pred_dir->config.tage.geometric_lengths[2]=GEOMETRICLENGTH2;
+			pred_dir->config.tage.geometric_lengths[3]=GEOMETRICLENGTH3;
 			if(!(pred_dir->config.tage.tag_size=calloc(NUMBEROFTAGTABLE,sizeof(int))))
 			{
 				fatal("cannot allocate geometric_lengths ");
 			}
-			pred_dir->config.tage.tag_size[0]=8;
-			pred_dir->config.tage.tag_size[1]=8;
-			pred_dir->config.tage.tag_size[2]=8;
-			pred_dir->config.tage.tag_size[3]=8;
+			pred_dir->config.tage.tag_size[0]=9;
+			pred_dir->config.tage.tag_size[1]=9;
+			pred_dir->config.tage.tag_size[2]=9;
+			pred_dir->config.tage.tag_size[3]=9;
 			for(int i=0;i<NUMBEROFTAGTABLE;i++)
 			{
 				if(!(pred_dir->config.tage.tag_comp_entry[i]=calloc(l1size,sizeof(struct tag_comp_entry))))
@@ -272,7 +272,6 @@ bpred_dir_create (
 
 
 			}
-			pred_dir->config.tage.use_alt_on_na=8;
 			if(!(pred_dir->config.tage.geometric_history=calloc(pred_dir->config.tage.geometric_lengths[0]+1,sizeof(unsigned int))))
 			{
 				fatal("cannot allocate geometric_lengths ");
@@ -305,7 +304,6 @@ bpred_dir_create (
 					fatal("shift register width, `%d', must be non-zero and positive",
 							shift_width);
 				pred_dir->config.two.shift_width = shift_width;
-
 				pred_dir->config.two.xor = xor;
 				pred_dir->config.two.shiftregs = calloc(l1size, sizeof(int));
 				if (!pred_dir->config.two.shiftregs)
@@ -620,21 +618,15 @@ bpred_dir_lookup(struct bpred_dir_t *pred_dir,	/* branch dir predictor inst */
 					temp_tage.tag_comp_tag[i]=baddr^(temp_tage.folded_history_tag[0][i].folded_history)^(temp_tage.folded_history_tag[1][i].folded_history<<1);
 					temp_tage.tag_comp_tag[i]&=((1<<temp_tage.tag_size[i])-1);	
 				}
-				//pred_dir->config.tage.tag_comp_tag=tag_comp_tag;
 				//Base Prediction 
-				int base_pred_index =((((baddr) >> 19) ^ ((baddr) >> MD_BR_SHIFT)) & (1024-1));
-
+				int base_pred_index =((((baddr) >> 19) ^ ((baddr) >> MD_BR_SHIFT)) & (4096-1));
 				p=&(pred_dir->config.tage.bimod[base_pred_index].ctr);
 				temp_tage.isBimodal=1;
-				//fprintf(stderr,"Taking bimodal as prediction \n");
-				//Searching for matching tag starting from Tag Component 0
 				for(int i=0;i<NUMBEROFTAGTABLE;i++)
 				{
 					if(temp_tage.tag_comp_entry[i][temp_tage.tag_comp_index[i]].tag==temp_tage.tag_comp_tag[i])
 					{
 						temp_tage.primeTagComp=i;
-						//fprintf(stderr,"Get:Choosen primeTagCompTable is %d %d %d\n",i,pred_dir->config.tage.folded_history_index[i].tag_comp_index,pred_dir->config.tage.folded_history_index[i].tag_comp_tag);
-						//fprintf(stderr,"Get:Matching useful and ctr %d %d\n",pred_dir->config.tage.tag_comp_entry[i][pred_dir->config.tage.folded_history_index[i].tag_comp_index].useful_entry,pred_dir->config.tage.tag_comp_entry[i][pred_dir->config.tage.folded_history_index[i].tag_comp_index].ctr);
 						break;
 					}
 				}
@@ -662,13 +654,11 @@ bpred_dir_lookup(struct bpred_dir_t *pred_dir,	/* branch dir predictor inst */
 				p=&(pred_dir->config.tage.tag_comp_entry[alt_tag_table_index][tag_index].ctr);
 				temp_tage.altPred=(temp_tage.tag_comp_entry[alt_tag_table_index][tag_index].ctr>>((int)ceil(log(TAGCTRMAX))-1))&1;
 			}
-			if(temp_tag_comp_entry.useful_entry!=0)//||(temp_tage.use_alt_on_na<8))
+			if(temp_tag_comp_entry.useful_entry!=0)
 			{
 				temp_tage.primePred=temp_tag_comp_entry.ctr>>((int)ceil(log(TAGCTRMAX))-1)&1;
 				temp_tage.isBimodal=0;	
 				p=&(pred_dir->config.tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].ctr);
-				fprintf(stderr,"Inside the lookup checking for primePred null %d\n",*p);
-				//fprintf(stderr,"Prime prediction taken \n");
 			}	
 		}
 		else
@@ -747,17 +737,13 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
 {
   struct bpred_btb_ent_t *pbtb = NULL;
   int index, i;
-//fprintf(stderr,"**********Start Lookup function**********\n");
-
-
   if (!dir_update_ptr)
     panic("no bpred update record");
 
   /* if this is not a branch, return not-taken */
   if (!(MD_OP_FLAGS(op) & F_CTRL))
-{//fprintf(stderr,"**********End Lookup function**********\n");
-  
-    return 0;
+{  
+	return 0;
 }
 
   pred->lookups++;
@@ -848,8 +834,6 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
 	                   % pred->retstack.size;
       pred->retstack_pops++;
       dir_update_ptr->dir.ras = TRUE; /* using RAS here */
-//fprintf(stderr,"**********End Lookup function**********\n");
-
       return target;
     }
 
@@ -894,9 +878,7 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
   /* if this is a jump, ignore predicted direction; we know it's taken. */
   if ((MD_OP_FLAGS(op) & (F_CTRL|F_UNCOND)) == (F_CTRL|F_UNCOND))
     {
-      	//fprintf(stderr,"**********End Lookup function**********\n");
-	
-	    return (pbtb ? pbtb->target : 1);
+      	return (pbtb ? pbtb->target : 1);
     }
 
   /* otherwise we have a conditional branch */
@@ -905,38 +887,25 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
      if(pred->class==BPredTage)
 	{	if(!(!!pred->dirpred.tage->config.tage.isBimodal))
 		{
-			//fprintf(stderr,"**********End Lookup function**********\n");
-	//fprintf(stderr,"value of prediction(pbtb==NULL) is %d\n",((*(dir_update_ptr->pdir1)>=4?1:0)));
-
-
-			return((*(dir_update_ptr->pdir1)>=((TAGCTRMAX>>1)+1))
-					?1
-					:0);
+			return((*(dir_update_ptr->pdir1)>=((TAGCTRMAX>>1)+1))?1:0);
 		}
 	} 
 	    
 	 /* BTB miss -- just return a predicted direction */
-//fprintf(stderr,"**********End Lookup function**********\n");
-	//fprintf(stderr,"value of prediction(pbtb==NULL) is %d\n",(*(dir_update_ptr->pdir1)));
 
-      return ((*(dir_update_ptr->pdir1) >= 2)
+        return ((*(dir_update_ptr->pdir1) >= 2)
 	      ? /* taken */ 1
 	      : /* not taken */ 0);
     }
   else
     {
-      	//fprintf(stderr,"**********End Lookup function**********\n");
-
-	    /* BTB hit, so return target if it's a predicted-taken branch */
+      	/* BTB hit, so return target if it's a predicted-taken branch */
 	if(pred->class==BPredTage)
 	{	if(!(!!pred->dirpred.tage->config.tage.isBimodal))
 		{
-			fprintf(stderr,"value of prediction is %d\n",((*(dir_update_ptr->pdir1)>=((TAGCTRMAX>>1)+1))?pbtb->target:0));
 			return((*(dir_update_ptr->pdir1)>=((TAGCTRMAX>>1)+1))?pbtb->target:0);
 		}
 	}
-	//fprintf(stderr,"value of prediction outside the the if is %d\n",(*(dir_update_ptr->pdir1))>=2);
-
       return ((*(dir_update_ptr->pdir1) >= 2)
 	      ? /* taken */ pbtb->target
 	      : /* not taken */ 0);
@@ -981,9 +950,7 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
   struct bpred_btb_ent_t *pbtb = NULL;
   struct bpred_btb_ent_t *lruhead = NULL, *lruitem = NULL;
   int index, i;
-  //fprintf(stderr,"**********Start update function**********\n");
-//fprintf(stderr,"Inside the update of Tage the value of pred_taken is %d and the final outcome is %d \n",pred_taken,taken);
-
+  
   /* don't change bpred state for non-branch instructions or if this
    * is a stateless predictor*/
   if (!(MD_OP_FLAGS(op) & F_CTRL))
@@ -1172,7 +1139,7 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 							--pred->dirpred.tage->config.tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].useful_entry;
 					}
 			}
-			else if((!!pred_taken)!=(temp_tage.primePred))
+			else if((!!taken)!=(temp_tage.altPred))
 			{
 				if((!!taken)==(!!temp_tage.primePred))
 				{
@@ -1197,48 +1164,19 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 				}
 			}
 			temp_tage=pred->dirpred.tage->config.tage;
-		
-			if((temp_tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].useful_entry==0)&&((temp_tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].ctr==(TAGCTRMAX>>1))||(temp_tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].ctr==((TAGCTRMAX>>1)+1))))
-			  {
-					if((!!temp_tage.primePred) !=(!!temp_tage.altPred))
-					{
-						if((!!(temp_tage.altPred)) ==(!!taken))
-						{
-							if(temp_tage.use_alt_on_na < 15)
-							{
-								pred->dirpred.tage->config.tage.use_alt_on_na++;
-							}
-						}
-						else if(temp_tage.use_alt_on_na > 0)
-						{
-							pred->dirpred.tage->config.tage.use_alt_on_na --;
-						}
-					}
-
-			     }
-			temp_tage=pred->dirpred.tage->config.tage;
-			/*if(((!!temp_tage.primePred)==(!!taken)) &&(temp_tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].useful_entry>=2)&&(temp_tage.primeTagComp-1>=0))
-			{
-				pred->dirpred.tage->config.tage.tag_comp_entry[temp_tage.primeTagComp-1][temp_tage.tag_comp_index[temp_tage.primeTagComp-1]].tag=temp_tage.tag_comp_tag[temp_tage.primeTagComp-1];
-				pred->dirpred.tage->config.tage.tag_comp_entry[temp_tage.primeTagComp-1][temp_tage.tag_comp_index[temp_tage.primeTagComp-1]].useful_entry=0;
-				pred->dirpred.tage->config.tage.tag_comp_entry[temp_tage.primeTagComp-1][temp_tage.tag_comp_index[temp_tage.primeTagComp-1]].ctr=((temp_tage.tag_comp_entry[temp_tage.primeTagComp][temp_tage.tag_comp_index[temp_tage.primeTagComp]].ctr>=4)?4:3);
-
-			}*/
-			temp_tage=pred->dirpred.tage->config.tage;
 		  }
 		 else
 		 {
-			//fprintf(stderr,"Bimodal update\n");
 			 if (taken)
-				{
-				  if (*dir_update_ptr->pdir1 < BASECTRMAX)
+			{
+			  if (*dir_update_ptr->pdir1 < BASECTRMAX)
 				    ++*dir_update_ptr->pdir1;
-				}
-			      else
-				{ /* not taken */
-				  if (*dir_update_ptr->pdir1 > 0)
+			}
+		      else
+			{ /* not taken */
+			  if (*dir_update_ptr->pdir1 > 0)
 				    --*dir_update_ptr->pdir1;
-				}
+			}
 		 }
 		 /**
 		  *If the prediction was incorrect, allocate a new entry with a long history table if there is space available in the tag table, else decrement the useful_entry counter of all the table after primary tag predictor table.
@@ -1258,14 +1196,11 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 			{
 				for(int i=(temp_tage.primeTagComp-1);i>=0;i--)
 				{
-					//if(pred->dirpred.tage->config.tage.tag_comp_entry[i][pred->dirpred.tage->config.tage.folded_history_index[i].tag_comp_index].useful_entry>0)	
 					pred->dirpred.tage->config.tage.tag_comp_entry[i][temp_tage.tag_comp_index[i]].useful_entry--;
 				}
 			}
 			else
 			{
-				srand(time(NULL));
-				int randomNumber = rand()%100;
 				int numberOfZeroUsefulEntry=0;
 				int choosen_tag_table=0;
 				for(int i=(temp_tage.primeTagComp-1);i>=0;i--)
@@ -1286,11 +1221,11 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 								}
 								else
 								{
-										choosen_tag_table=i+2;
-									}
+									choosen_tag_table=i+2;
 								}
-						}
+								}
 					}
+				}
 				if(taken)
 				{
 					pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][temp_tage.tag_comp_index[choosen_tag_table]].ctr=((TAGCTRMAX>>1)+1);
@@ -1300,14 +1235,9 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 				{
 					pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][temp_tage.tag_comp_index[choosen_tag_table]].ctr=(TAGCTRMAX>>1);
 				}
-				//fprintf(stderr,"new entry counter is  %d \n",pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index].ctr);
-
 				pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][temp_tage.tag_comp_index[choosen_tag_table]].tag=temp_tage.tag_comp_tag[choosen_tag_table];
 				pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][temp_tage.tag_comp_index[choosen_tag_table]].useful_entry=0;
-				//fprintf(stderr,"Update new_entry :Choosen primeTagCompTable is %d %d %d %d\n",choosen_tag_table,pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index,pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_tag,pred->dirpred.tage->config.tage.tag_size[0]);
-	//			//fprintf(stderr,"Update new_entry : %d %d\n",pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index].useful_entry,pred->dirpred.tage->config.tage.tag_comp_entry[choosen_tag_table][pred->dirpred.tage->config.tage.folded_history_index[choosen_tag_table].tag_comp_index].ctr);
-
-
+				
 			}
 		 }
 		 temp_tage=pred->dirpred.tage->config.tage;
@@ -1358,16 +1288,9 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 		{
 			pred->dirpred.tage->config.tage.geometric_history[0]=0;
 		}
-		//fprintf(stderr,"The geometric history is \n");
-		for(int i=0;i<40;i++)
-		{
-			//fprintf(stderr,"%d ",pred->dirpred.tage->config.tage.geometric_history[i]);
-		}
 		temp_tage=pred->dirpred.tage->config.tage;
 		for(int i=0;i<NUMBEROFTAGTABLE;i++)
 		{
-			////fprintf(stderr,"The folding length is %d\n",pred->dirpred.tage->config.tage.folded_history_index[i].folded_length
-			
 			if(temp_tage.geometric_lengths[i]<(((int)log2(temp_tage.t1size))))
 			{
 				temp_tage.folded_history_index[i].folded_history=0;
@@ -1418,16 +1341,8 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 				pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history^=temp_tage.geometric_history[temp_tage.geometric_lengths[i]]<<(temp_tage.geometric_lengths[i]%temp_tage.folded_history_tag[1][i].folded_length);
 				pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history&=((1<<temp_tage.folded_history_tag[1][i].folded_length)-1);
 				fprintf(stderr,"The folded history of table %d tag2 is %d \n",i,pred->dirpred.tage->config.tage.folded_history_tag[1][i].folded_history);
-
-
+			}
 		}
-		}
-		pred->dirpred.tage->config.tage.path_history = temp_tage.path_history<<1;
-		if(baddr&1)
-		{
-			pred->dirpred.tage->config.tage.path_history=pred->dirpred.tage->config.tage.path_history+1;
-		}
-		pred->dirpred.tage->config.tage.path_history=(pred->dirpred.tage->config.tage.path_history&((1<<16)-1));
       }
       else
       {

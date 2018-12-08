@@ -63,7 +63,12 @@
 #define NUMBEROFTAGTABLE 4
 #define BASECTRMAX 3
 #define TAGCTRMAX  3
-#define TAGUSEFULMAX 1
+#define TAGUSEFULMAX 3
+#define GEOMETRICLENGTH0 128
+#define	GEOMETRICLENGTH1 64
+#define GEOMETRICLENGTH2 32
+#define GEOMETRICLENGTH3 16
+
 /*
  * This module implements a number of branch predictor mechanisms.  The
  * following predictors are supported:
